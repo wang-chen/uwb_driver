@@ -3,18 +3,12 @@
 <launch>
 
 <rosparam param="/uwb_localization_node0/ancsPos"> [-3.713, 4.534, -1.945, 3.031, 2.979, -0.6718, 3.72, -3.518, -2.0, -2.985, -3.011, -0.6213]</rosparam>
-<rosparam param="/uwb_localization_node0/ancsPos"> [-5, 7.5, -1.95, 5, 7.5, -0.75, 5, -7.5, -1.95, -5, -7.5, -0.60]</rosparam
+<rosparam param="/uwb_localization_node0/ancsPos"> [-5, 7.5, -1.95, 5, 7.5, -0.75, 5, -7.5, -1.95, -5, -7.5, -0.60]</rosparam>
 <rosparam param="/uwb_localization_node0/ancsId"> [100, 101, 102, 103]</rosparam>
 <rosparam param="/uwb_localization_node0/mobsId"> [200, 201, 202, 203]</rosparam>
 <rosparam param="/uwb_localization_node0/ekfCovXyZ"> [5, 12.5]</rosparam>
 <rosparam param="/uwb_localization_node0/albega"> [1.001966856066302, 0.108814649293333, 200]</rosparam>
-<rosparam param="/node_pos">
-                    [ 4.534, -3.713, 1.945,
-                      2.979, 3.031,  0.6718,
-                      -3.518,  3.72, 2.0,
-                     -3.011 , -2.985, 0.6213 ]   
-<!-- x = y, y = x, z =-z; -->
-</rosparam>
+<rosparam param="/node_pos"> [ 4.534, -3.713, 1.945, 2.979, 3.031,  0.6718, -3.518,  3.72, 2.0, -3.011 , -2.985, 0.6213] </rosparam>
 
  <!-- rcmEkfLocalization node -->
   <node respawn="true" pkg="uwb_localization" type="uwb_localization_node" name="uwb_localization_node0" output="screen">
@@ -35,7 +29,7 @@
 
             <!-- configuration for the p4xx -->
 	<param name="p4xxInterfaceChoice" type="int" value="1"/>
-	<param name="p4xxSerialPort" type="string" value="201" />
+	<param name="p4xxSerialPort" type="string" value="204" />
 	<param name="mode" type="int" value="0" />
 	<param name="autoConfig" type="bool" value="false" />
 
