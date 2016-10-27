@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<launch>
+
+<rosparam param="/uwb_localization_ls_sim_node0/ancsPos"> [-3.832, 4.377, -2.33, 3.055, 3.003, -0.68, 2.885, -2.986, -1.93, -2.973, -2.869, -0.43]</rosparam>
+<rosparam param="/uwb_localization_ls_sim_node0/ancsId"> [101, 102, 105, 106]</rosparam>
+
+ <!-- rcmEkfLocalization node -->
+  <node respawn="false" pkg="uwb_localization"
+        type="uwb_localization_ls_sim_node" name="uwb_localization_ls_sim_node0" output="screen">
+            <!-- configuration for the node -->
+	<param name="rcmLocalizationRate" type="int" value="50"/>
+            <!-- configuration for the p410 -->
+	<param name="p410InterfaceChoice" type="int" value="1"/>
+	<param name="p410SerialPort" type="string" value="/dev/ttyACM0" />
+            <!-- configuration for fcc -->
+	<param name="fccSerialPort" type="string" value="/dev/ttyO1" />
+	<param name="logEnable" type="bool" value="true" />
+            <!-- configuration for the ekf -->
+	<param name="enableCalib" type="bool" value="true"/>
+	<param name="useLaser" type="bool" value="true"/>
+	<param name="medianFilterSize" type="double" value="5.0"/>
+  </node>
+  
+</launch>
