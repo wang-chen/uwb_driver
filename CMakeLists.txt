@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(uwb_localization)
 
-if(UNIX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
-endif()
+
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -78,7 +76,9 @@ generate_messages(
    std_msgs
    geometry_msgs
  )
-
+if(UNIX)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+endif()
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
