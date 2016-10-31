@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(uwb_localization)
+project(uwb_driver)
 
 if(UNIX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
@@ -19,7 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_library(RTIMULib libRTIMULib.so)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -53,8 +52,7 @@ find_library(RTIMULib libRTIMULib.so)
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   rcmEkfStateMsg.msg
-   uwbdata.msg
+   uwb_info.msg
 #   Message2.msg
  )
 
@@ -110,7 +108,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES uwb_localization
+#  LIBRARIES uwb_driver
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
@@ -124,27 +122,12 @@ catkin_package(
 # include_directories(include)
 include_directories(
 	${catkin_INCLUDE_DIRS}
-	src/linux_mpu9250/math
-	src/linux_mpu9250/eMPL
-	src/linux_mpu9250/glue
 	src/
 )
 
-add_definitions(-DEMPL_TARGET_LINUX -DMPU9250)
-
 ## Declare a C++ library
-SET(MPU9250_SRCS
-	src/linux_mpu9250/math/vector3d.c
-	src/linux_mpu9250/math/quaternion.c
-	src/linux_mpu9250/eMPL/inv_mpu.c
-	src/linux_mpu9250/eMPL/inv_mpu_dmp_motion_driver.c
-	src/linux_mpu9250/glue/linux_glue.c
-	src/mpu9250.c
-)
-
-## Declare a C++ library
-# add_library(uwb_localization
-#   src/${PROJECT_NAME}/uwb_localization.cpp
+# add_library(uwb_driver
+#   src/${PROJECT_NAME}/uwb_driver.cpp
 # )
 #additional link directory
 link_directories(src/lib/)
@@ -154,63 +137,30 @@ SET(UWB_SRCS
 	src/rcm.c
 	src/rcmIf.c
 	src/rn.c
-	src/ekf_mf.cpp
-	src/trilat.cpp
-	src/ekf_iod.cpp
-	src/trilatCalib.cpp
-	src/mesh_nodes.cpp
-	src/nlsTRI345.cpp
 )
-
-#SET(UWB_SIM_SRCS 
-#	src/rcm.c    
-#	src/rcmIf.c
-#	src/rn.c
-#	src/ekf_mf.cpp
-#	src/trilat.cpp
-#	src/ekf_iod.cpp
-#	src/trilatCalib.cpp
-#	src/simData.cpp	
-#)
-
-#SET(UWB_LS_SIM_SRCS 
-#	src/rcm.c    
-#	src/rcmIf.c
-#	src/rn.c
-#	src/ekf_mf.cpp
-#	src/trilat.cpp
-#	src/ekf_iod.cpp
-#	src/trilatCalib.cpp
-#	src/simData.cpp
-#)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(uwb_localization ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(uwb_driver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-#add_executable(uwb_localization_sim_node src/rcmEkfLocalizationSim.cpp ${UWB_SIM_SRCS})
-#add_executable(uwb_localization_ls_sim_node src/rcmTRILSLocalizationSim.cpp ${UWB_LS_SIM_SRCS})
-add_executable(uwb_localization_node src/rcmEkfLocalization.cpp ${UWB_SRCS} ${MPU9250_SRCS})
+add_executable(uwb_driver_node src/uwb_driver.cpp ${UWB_SRCS})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(uwb_localization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(uwb_driver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(uwb_localization_node
+ target_link_libraries(uwb_driver_node
    ${catkin_LIBRARIES}
-#   RTIMULib
-#   libmesh_nodes.so
-#   libnlsTRI345.so
  )
 
-#target_link_libraries(uwb_localization_sim_node
+#target_link_libraries(uwb_driver_sim_node
 #  ${catkin_LIBRARIES}
 #)
 
-#target_link_libraries(uwb_localization_ls_sim_node
+#target_link_libraries(uwb_driver_ls_sim_node
 #  ${catkin_LIBRARIES}
 #  libnlsTRI345.so
 #)
@@ -230,7 +180,7 @@ add_executable(uwb_localization_node src/rcmEkfLocalization.cpp ${UWB_SRCS} ${MP
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS uwb_localization uwb_localization_node
+# install(TARGETS uwb_driver uwb_driver_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -255,7 +205,7 @@ add_executable(uwb_localization_node src/rcmEkfLocalization.cpp ${UWB_SRCS} ${MP
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_uwb_localization.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_uwb_driver.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
