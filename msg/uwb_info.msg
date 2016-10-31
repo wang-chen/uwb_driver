@@ -1,5 +1,6 @@
 int8 responder_id
 int8 responder_idx
+int8 antenna
 float64 distance
 uint8[] data
 uint32 uwb_time

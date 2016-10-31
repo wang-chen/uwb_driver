@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
     while(ros::ok())
     {
         //Check and find the coresponding index of the update
-        int indexUpdate = -1;
+        int nodeIndex = -1;
         double newRange = -1.0;
         switch (rcmInfoGet(&rangeInfo, &ndbInfo))//get distance
         {
@@ -503,7 +503,7 @@ int main(int argc, char *argv[])
                 for(int i = 0; i < ancsTotal; i++)
                     if((uint32_T)ancsId[i] == rangeInfo.responderId)
                     {
-                        indexUpdate = i;
+                        nodeIndex = i;
                         newRange = rangeInfo.precisionRangeMm/1000.0;
                         break;
                     }
@@ -514,22 +514,26 @@ int main(int argc, char *argv[])
 
         }
 
-        printf("ID: %d\tRange: %f\n", indexUpdate+1, newRange);
-        uwb_driver::uwb_info uwb_info_msg;
+        if (nodeIndex != -1)
+        {
+            printf("Index: %d\tID: %d\t\tRange: %f\n", nodeIndex+1, ancsId[nodeIndex], newRange);
+            uwb_driver::uwb_info uwb_info_msg;
 
-        uwb_info_msg.distance = newRange;
+            uwb_info_msg.distance = newRange;
 
-        uwb_info_msg.responder_location.x = ancsPos[nodeId*3];
-        uwb_info_msg.responder_location.y = ancsPos[nodeId*3+1];
-        uwb_info_msg.responder_location.z = ancsPos[nodeId*3+2];
+            uwb_info_msg.antenna = rangeInfo.antennaMode;
 
-        uwb_info_msg.responder_id = ancsId[nodeId];
-        uwb_info_msg.responder_idx = nodeId;
-        printf("requester node location: [%.3f  %.3f  %.3f]\n", uwb_info_msg.responder_location.x, uwb_info_msg.responder_location.y, uwb_info_msg.responder_location.z);
-        printf("distance to node %d: %.3f\n", ancsId[nodeId], newRange);
-        printf("---\n");
+            uwb_info_msg.responder_location.x = ancsPos[nodeIndex*3];
+            uwb_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
+            uwb_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
 
-        uwb_publisher.publish(uwb_info_msg);
+            uwb_info_msg.responder_id = ancsId[nodeIndex];
+            uwb_info_msg.responder_idx = nodeIndex;
+            printf("requester location: [%.3f  %.3f  %.3f]\n", uwb_info_msg.responder_location.x, uwb_info_msg.responder_location.y, uwb_info_msg.responder_location.z);
+            printf("---\n");
+
+            uwb_publisher.publish(uwb_info_msg);
+        }
         rate.sleep();
     }
 }
