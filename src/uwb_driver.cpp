@@ -527,7 +527,7 @@ int main(int argc, char *argv[])
             uwb_info_msg.uwb_time = rangeInfo.timestamp;
             printf("---\n");
             uwb_publisher.publish(uwb_info_msg);
-            printf("Index:%d\tID:%d\tRange: %f\ttu = %zu\tant=%d\trqstr loc:[%.3f  %.3f  %.3f]\n",
+            printf("Index:%d\tID:%d\tRange: %f\ttu = %zu\tant=%d\trqstr loc:\t%.3f\t%.3f\t%.3f\n",
                    uwb_info_msg.responder_id+1,
                    uwb_info_msg.responder_id,
                    uwb_info_msg.distance,
