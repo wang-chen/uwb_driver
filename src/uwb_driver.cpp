@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
 
     /*-------------------------------------------------Initial Trilateration----------------------------------------------------*/
 
-    ros::Rate rate(p44QueryRate);
+    ros::Duration sleepTime = ros::Duration(1.0/p44QueryRate);
     //get the initial position by trilaterating the average
     while(ros::ok())
     {
@@ -516,24 +516,29 @@ int main(int argc, char *argv[])
 
         if (nodeIndex != -1)
         {
-            printf("Index: %d\tID: %d\t\tRange: %f\n", nodeIndex+1, ancsId[nodeIndex], newRange);
             uwb_driver::uwb_info uwb_info_msg;
-
             uwb_info_msg.distance = newRange;
-
             uwb_info_msg.antenna = rangeInfo.antennaMode;
-
             uwb_info_msg.responder_location.x = ancsPos[nodeIndex*3];
             uwb_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
             uwb_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
-
             uwb_info_msg.responder_id = ancsId[nodeIndex];
             uwb_info_msg.responder_idx = nodeIndex;
-            printf("requester location: [%.3f  %.3f  %.3f]\n", uwb_info_msg.responder_location.x, uwb_info_msg.responder_location.y, uwb_info_msg.responder_location.z);
+            uwb_info_msg.uwb_time = rangeInfo.timestamp;
             printf("---\n");
-
             uwb_publisher.publish(uwb_info_msg);
+            printf("Index:%d\tID:%d\tRange: %f\ttu = %d\tant=%d\trqstr loc:[%.3f  %.3f  %.3f]\n",
+                   uwb_info_msg.responder_id+1,
+                   uwb_info_msg.responder_id,
+                   uwb_info_msg.distance,
+                   uwb_info_msg.uwb_time,
+                   uwb_info_msg.antenna,
+                   uwb_info_msg.responder_location.x,
+                   uwb_info_msg.responder_location.y,
+                   uwb_info_msg.responder_location.z);
         }
-        rate.sleep();
+
+        if(restEnable)
+            sleepTime.sleep();
     }
 }
