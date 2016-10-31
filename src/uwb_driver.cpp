@@ -313,16 +313,16 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    bool autoConfig = true;
-    if(uwbDriverNodeHandle.getParam("autoConfig", autoConfig))
-        if(autoConfig)
-            printf(KBLU "Retrieved value 'true' for param 'autoConfig'!\n" RESET);
+    bool autoConfigRn = true;
+    if(uwbDriverNodeHandle.getParam("autoConfigRn", autoConfigRn))
+        if(autoConfigRn)
+            printf(KBLU "Retrieved value 'true' for param 'autoConfigRn'!\n" RESET);
         else
-            printf(KBLU "Retrieved value 'false' for param 'autoConfig'!\n" RESET);
+            printf(KBLU "Retrieved value 'false' for param 'autoConfigRn'!\n" RESET);
     else
     {
-        printf(KYEL "Couldn't retrieve param 'autoConfig'. Enforcing autoconfiguration from payload!\n" RESET);
-        autoConfig = false;
+        printf(KYEL "Couldn't retrieve param 'autoConfigRn'. Retaining configuration on P440 instead!\n" RESET);
+        autoConfigRn = false;
     }
 
     //initialize P4xx serial interface
@@ -377,7 +377,7 @@ int main(int argc, char *argv[])
                 exit(0);
         }
 
-        if(autoConfig)
+        if(autoConfigRn)
         {
             // Set the NDB Neighbor Age arbitrarily high to keep nodes from dropping out
             rnInitConfig.maxNeighborAgeMs = 4294967295;

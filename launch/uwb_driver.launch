@@ -3,6 +3,13 @@
 <launch>
 
  <!-- uwb driver node -->
+
+    <!-- configuration for the network -->
+	<rosparam param="/uwb_driver_node0/mobsId"> [200, 201, 202, 203]</rosparam>
+	<rosparam param="/uwb_driver_node0/ancsPos"> [4.534, -3.713, 1.945, 2.979, 3.031, 0.6718, -3.518,  3.72, 2.0, -3.011 , -2.985, 0.6213]</rosparam>
+	<rosparam param="/uwb_driver_node0/ancsId"> [100, 101, 102, 103]</rosparam>
+	<rosparam param="/uwb_driver_node0/albega"> [1.001966856066302, 0.108814649293333, 200]</rosparam> <!-- calibration values for the p4xx -->
+	
   <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
             <!-- configuration for the node -->
 	<param name="p44QueryRate" type="int" value="20"/>
@@ -13,13 +20,8 @@
 	<param name="enableVicon" type="bool" value="true"/>
 
             <!-- configuration for the p4xx -->
-	<param name="ancsPos" value ="[4.534, -3.713, 1.945, 2.979, 3.031, 0.6718, -3.518,  3.72, 2.0, -3.011 , -2.985, 0.6213]"/>
-	<param name="ancsId" value = "[100, 101, 102, 103]"/>
-	<param name="mobsId" value = "[200, 201, 202, 203]"/>
-	<param name="albega" value = "[1.001966856066302, 0.108814649293333, 200]"/> <!-- calibration values for the p4xx -->
-
 	<param name="p4xxInterfaceChoice" type="int" value="1"/>
-	<param name="p4xxSerialPort" type="string" value="204" />
+	<param name="p4xxSerialPort" type="string" value="206" />
 	<param name="mode" type="int" value="0" />
 	<param name="autoConfigRn" type="bool" value="false" />
 	
@@ -30,3 +32,4 @@
   </node>
   
 </launch>
+
