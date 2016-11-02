@@ -13,7 +13,7 @@
 
 //_____________________________________________________________________________
 //
-// #includes 
+// #includes
 //_____________________________________________________________________________
 
 #include <stdio.h>
@@ -37,7 +37,7 @@
 
 //_____________________________________________________________________________
 //
-// #defines 
+// #defines
 //_____________________________________________________________________________
 
 
@@ -49,7 +49,8 @@
 typedef union
 {
     rcmMsg_FullRangeInfo rangeInfo;
-	rnMsg_GetFullNeighborDatabaseConfirm ndbInfo;
+    rcmMsg_DataInfo dataInfo;
+    rnMsg_GetFullNeighborDatabaseConfirm ndbInfo;
 } infoMsgs_t;
 
 
@@ -63,7 +64,7 @@ int msgIdCount;
 
 //_____________________________________________________________________________
 //
-// Private function prototypes 
+// Private function prototypes
 //_____________________________________________________________________________
 
 
@@ -80,19 +81,19 @@ int rcmBit(int *status)
     int retVal = ERR, numBytes, waitCount;
 
     // create request message
-	request.msgType = htons(RCRM_BIT_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCRM_BIT_REQUEST);
+    request.msgId = htons(msgIdCount++);
 
     // make sure no pending messages
     rcmIfFlush();
 
     // send message to RCM
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
-    
+
     // P440s have a longer timeout for BIT, so be prepared to wait longer.
-    
+
     for(waitCount=0; waitCount<6; waitCount++)
     {
         numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
@@ -131,14 +132,14 @@ int rcmConfigGet(rcmConfiguration *config)
     int retVal = ERR, numBytes;
 
     // create request message
-	request.msgType = htons(RCM_GET_CONFIG_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCM_GET_CONFIG_REQUEST);
+    request.msgId = htons(msgIdCount++);
 
     // make sure no pending messages
     rcmIfFlush();
 
     // send message to RCM
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
     numBytes = rcmIfGetPacket(&confirm, sizeof(rcmMsg_GetConfigConfirm));
@@ -188,8 +189,8 @@ int rcmConfigSet(rcmConfiguration *config)
     int retVal = ERR, numBytes;
 
     // create request message
-	request.msgType = htons(RCM_SET_CONFIG_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCM_SET_CONFIG_REQUEST);
+    request.msgId = htons(msgIdCount++);
     memcpy(&request.config, config, sizeof(*config));
 
     // Handle byte ordering in config struct
@@ -203,7 +204,7 @@ int rcmConfigSet(rcmConfiguration *config)
     rcmIfFlush();
 
     // send message to RCM
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
     numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
@@ -236,15 +237,15 @@ int rcmOpModeSet(int opMode)
     int retVal = ERR, numBytes;
 
     // create request message
-	request.msgType = htons(RCRM_SET_OPMODE_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCRM_SET_OPMODE_REQUEST);
+    request.msgId = htons(msgIdCount++);
     request.opMode = htonl(opMode);
 
     // make sure no pending messages
     rcmIfFlush();
 
     // send message to RCM
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
     numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
@@ -277,14 +278,14 @@ int rcmOpModeGet(int *opMode)
     int retVal = ERR, numBytes;
 
     // create request message
-	request.msgType = htons(RCRM_GET_OPMODE_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCRM_GET_OPMODE_REQUEST);
+    request.msgId = htons(msgIdCount++);
 
     // make sure no pending messages
     rcmIfFlush();
 
     // send message to RCM
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
     numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
@@ -295,11 +296,11 @@ int rcmOpModeGet(int *opMode)
         // Handle byte ordering
         confirm.msgType = ntohs(confirm.msgType);
 
-		// is this the correct message type and is status good?
+        // is this the correct message type and is status good?
         if (confirm.msgType == RCRM_GET_OPMODE_CONFIRM) {
-			*opMode = ntohl(confirm.opMode);
+            *opMode = ntohl(confirm.opMode);
             retVal = OK;
-		}
+        }
     }
     return retVal;
 }
@@ -317,15 +318,15 @@ int rcmSleepModeSet(int sleepMode)
     int retVal = ERR, numBytes;
 
     // create request message
-	request.msgType = htons(RCRM_SET_SLEEP_MODE_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCRM_SET_SLEEP_MODE_REQUEST);
+    request.msgId = htons(msgIdCount++);
     request.sleepMode = htonl(sleepMode);
 
     // make sure no pending messages
     rcmIfFlush();
 
     // send message to RCM
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
     numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
@@ -357,14 +358,14 @@ int rcmStatusInfoGet(rcrmMsg_GetStatusInfoConfirm *confirm)
     int retVal = ERR, numBytes;
 
     // create request message
-	request.msgType = htons(RCRM_GET_STATUS_INFO_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCRM_GET_STATUS_INFO_REQUEST);
+    request.msgId = htons(msgIdCount++);
 
     // make sure no pending messages
     rcmIfFlush();
 
     // send message to RCM
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
     numBytes = rcmIfGetPacket(confirm, sizeof(rcrmMsg_GetStatusInfoConfirm));
@@ -401,22 +402,23 @@ int rcmStatusInfoGet(rcrmMsg_GetStatusInfoConfirm *confirm)
 // rcmInfoGet - range to another RCM module
 //_____________________________________________________________________________
 
-int rcmInfoGet(rcmMsg_FullRangeInfo *rangeInfo, rnMsg_GetFullNeighborDatabaseConfirm *ndbInfo)
+int rcmInfoGet(rcmMsg_FullRangeInfo *rangeInfo, rcmMsg_DataInfo *dataInfo, rnMsg_GetFullNeighborDatabaseConfirm *ndbInfo)
 {
     infoMsgs_t infoMsgs;
     int retVal = ERR, numBytes;
-	int i;
+    int i;
 
     // clear out caller's info structs
     memset(rangeInfo, 0, sizeof(*rangeInfo));
+    memset(dataInfo, 0, sizeof(*dataInfo));
     memset(ndbInfo, 0, sizeof(*ndbInfo));
     rangeInfo->rangeStatus = RCM_RANGE_STATUS_TIMEOUT;
 
-	// Collect the info messages
+    // Collect the info messages
     while ((numBytes = rcmIfGetPacket(&infoMsgs, sizeof(infoMsgs))) > 0)
     {
-		// Based on the configuration setup, radio should only be able to receive
-		//      DATA_INFO messages as well as the RANGE_INFO or NDB_INFO message chosen
+        // Based on the configuration setup, radio should only be able to receive
+        //      DATA_INFO messages as well as the RANGE_INFO or NDB_INFO message chosen
         switch(ntohs(infoMsgs.rangeInfo.msgType))
         {
             case RCM_FULL_RANGE_INFO:
@@ -442,47 +444,57 @@ int rcmInfoGet(rcmMsg_FullRangeInfo *rangeInfo, rnMsg_GetFullNeighborDatabaseCon
                 rangeInfo->coarseTOFInBins = ntohl(rangeInfo->coarseTOFInBins);
                 rangeInfo->timestamp = ntohl(rangeInfo->timestamp);
 
-				retVal = RANGEINFO;
+                retVal = RANGEINFO;
                 break;
             case RCM_DATA_INFO:
-                // Ignore data info messages
-				printf("\nReceived RCM_DATA_INFO. Ignoring...\n");
+                // copy message to caller's struct
+                memcpy(dataInfo, &infoMsgs.dataInfo, sizeof(*dataInfo));
+                // handle byte ordering
+                dataInfo->msgType = ntohs(dataInfo->msgType);
+                dataInfo->msgId = ntohs(dataInfo->msgId);
+                dataInfo->sourceId = ntohl(dataInfo->sourceId);
+                dataInfo->noise = ntohs(dataInfo->noise);
+                dataInfo->vPeak = ntohs(dataInfo->vPeak);
+                dataInfo->timestamp = ntohl(dataInfo->timestamp);
+                dataInfo->dataSize = ntohs(dataInfo->dataSize);
+
+                retVal = DATAINFO;
                 break;
-			case RN_FULL_NEIGHBOR_DATABASE_INFO:
-			case RN_GET_FULL_NEIGHBOR_DATABASE_CONFIRM:
+            case RN_FULL_NEIGHBOR_DATABASE_INFO:
+            case RN_GET_FULL_NEIGHBOR_DATABASE_CONFIRM:
                 // copy message to caller's struct
                 memcpy(ndbInfo, &infoMsgs.ndbInfo, sizeof(*ndbInfo));
                 // handle byte ordering
-				ndbInfo->msgType = ntohs(ndbInfo->msgType);
-				ndbInfo->msgId = ntohs(ndbInfo->msgId);
-				ndbInfo->timestamp = ntohl(ndbInfo->timestamp);
-				ndbInfo->status = ntohl(ndbInfo->sortType);
-				for (i = 0; i < ndbInfo->numNeighborEntries; i++)
-				{
-					ndbInfo->neighbors[i].nodeId = ntohl(ndbInfo->neighbors[i].nodeId);
-					ndbInfo->neighbors[i].stopwatchTime = ntohs(ndbInfo->neighbors[i].stopwatchTime);
-					ndbInfo->neighbors[i].rangeMm = ntohl(ndbInfo->neighbors[i].rangeMm);
-					ndbInfo->neighbors[i].rangeErrorEstimate = ntohs(ndbInfo->neighbors[i].rangeErrorEstimate);
-					ndbInfo->neighbors[i].rangeVelocity = ntohs(ndbInfo->neighbors[i].rangeVelocity);
-					ndbInfo->neighbors[i].ledFlags = ntohs(ndbInfo->neighbors[i].ledFlags);
-					ndbInfo->neighbors[i].noise = ntohs(ndbInfo->neighbors[i].noise);
-					ndbInfo->neighbors[i].vPeak = ntohs(ndbInfo->neighbors[i].vPeak);
-					ndbInfo->neighbors[i].statsNumRangeAttempts = ntohs(ndbInfo->neighbors[i].statsNumRangeAttempts);
-					ndbInfo->neighbors[i].statsNumRangeSuccesses = ntohs(ndbInfo->neighbors[i].statsNumRangeSuccesses);
-					ndbInfo->neighbors[i].statsAgeMs = ntohl(ndbInfo->neighbors[i].statsAgeMs);
-					ndbInfo->neighbors[i].rangeUpdateTimestampMs = ntohl(ndbInfo->neighbors[i].rangeUpdateTimestampMs);
-					ndbInfo->neighbors[i].lastHeardTimestampMs = ntohl(ndbInfo->neighbors[i].lastHeardTimestampMs);
-					ndbInfo->neighbors[i].addedToNDBTimestampMs = ntohl(ndbInfo->neighbors[i].addedToNDBTimestampMs);
-				}
-				retVal = FULLNDB;
-				break;
-			default:
-				printf("\nReceived Unknown Message Type: 0x%X\n", ntohs(infoMsgs.rangeInfo.msgType));
-				break;
-        }	
-		// Keep processing unless we got desired message
-		if (retVal > 0)
-			break;
+                ndbInfo->msgType = ntohs(ndbInfo->msgType);
+                ndbInfo->msgId = ntohs(ndbInfo->msgId);
+                ndbInfo->timestamp = ntohl(ndbInfo->timestamp);
+                ndbInfo->status = ntohl(ndbInfo->sortType);
+                for (i = 0; i < ndbInfo->numNeighborEntries; i++)
+                {
+                    ndbInfo->neighbors[i].nodeId = ntohl(ndbInfo->neighbors[i].nodeId);
+                    ndbInfo->neighbors[i].stopwatchTime = ntohs(ndbInfo->neighbors[i].stopwatchTime);
+                    ndbInfo->neighbors[i].rangeMm = ntohl(ndbInfo->neighbors[i].rangeMm);
+                    ndbInfo->neighbors[i].rangeErrorEstimate = ntohs(ndbInfo->neighbors[i].rangeErrorEstimate);
+                    ndbInfo->neighbors[i].rangeVelocity = ntohs(ndbInfo->neighbors[i].rangeVelocity);
+                    ndbInfo->neighbors[i].ledFlags = ntohs(ndbInfo->neighbors[i].ledFlags);
+                    ndbInfo->neighbors[i].noise = ntohs(ndbInfo->neighbors[i].noise);
+                    ndbInfo->neighbors[i].vPeak = ntohs(ndbInfo->neighbors[i].vPeak);
+                    ndbInfo->neighbors[i].statsNumRangeAttempts = ntohs(ndbInfo->neighbors[i].statsNumRangeAttempts);
+                    ndbInfo->neighbors[i].statsNumRangeSuccesses = ntohs(ndbInfo->neighbors[i].statsNumRangeSuccesses);
+                    ndbInfo->neighbors[i].statsAgeMs = ntohl(ndbInfo->neighbors[i].statsAgeMs);
+                    ndbInfo->neighbors[i].rangeUpdateTimestampMs = ntohl(ndbInfo->neighbors[i].rangeUpdateTimestampMs);
+                    ndbInfo->neighbors[i].lastHeardTimestampMs = ntohl(ndbInfo->neighbors[i].lastHeardTimestampMs);
+                    ndbInfo->neighbors[i].addedToNDBTimestampMs = ntohl(ndbInfo->neighbors[i].addedToNDBTimestampMs);
+                }
+                retVal = FULLNDB;
+                break;
+            default:
+                printf("\nReceived Unknown Message Type: 0x%X\n", ntohs(infoMsgs.rangeInfo.msgType));
+                break;
+        }
+        // Keep processing unless we got desired message
+        if (retVal > 0)
+            break;
     }
     return retVal;
 }
@@ -500,8 +512,8 @@ int rcmDataSend(int antennaMode, int dataSize, char *data)
     int retVal = ERR, numBytes;
 
     // create request message
-	request.msgType = htons(RCM_SEND_DATA_REQUEST);
-	request.msgId = htons(msgIdCount++);
+    request.msgType = htons(RCM_SEND_DATA_REQUEST);
+    request.msgId = htons(msgIdCount++);
     request.antennaMode = antennaMode;
     request.dataSize = htons(dataSize);
     // make sure there isn't too much data
@@ -515,7 +527,7 @@ int rcmDataSend(int antennaMode, int dataSize, char *data)
 
     // send message to RCM
     numBytes = sizeof(request) - RCM_USER_DATA_LENGTH + dataSize;
-	rcmIfSendPacket(&request, sizeof(request));
+    rcmIfSendPacket(&request, sizeof(request));
 
     // wait for response
     numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));

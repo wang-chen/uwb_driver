@@ -37,8 +37,12 @@
 #define RANGEINFO 1
 #endif
 
+#ifndef DATAINFO
+#define DATAINFO 2
+#endif
+
 #ifndef FULLNDB
-#define FULLNDB 2
+#define FULLNDB 3
 #endif
 
 //_____________________________________________________________________________

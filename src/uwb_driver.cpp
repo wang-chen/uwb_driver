@@ -40,8 +40,8 @@
 #include "time.h"
 #include <arpa/inet.h>
 
-#include "uwb_driver/uwb_info.h"  //self-defined msg file
-
+#include "uwb_driver/uwb_range_info.h"  //self-defined msg file
+#include "uwb_driver/uwb_data_info.h"   //self-defined msg file
 //_____________________________________________________________________________
 //
 // Debugging utilities
@@ -79,6 +79,8 @@ std::vector<int>    ancsId;
 uint8_T ancsTotal = 0;
 std::vector<int>    mobsId;
 uint8_T mobsTotal = 0;
+std::vector<int> nodesId;
+uint8_T nodesTotal = 0;
 
 //_____________________________________________________________________________
 //
@@ -116,6 +118,8 @@ rnMsg_SetTDMASlotmapRequest initTdmaSlotMapSet;
 // Info message structures
 rcmMsg_FullRangeInfo rangeInfo;
 rnMsg_GetFullNeighborDatabaseConfirm ndbInfo;
+rcmMsg_DataInfo dataInfo;
+uint8_T uwb_msg[RN_USER_DATA_LENGTH];
 
 /*------------------------------------------------------Function prototypes---------------------------------------------*/
 double getLocalTimeNow();
@@ -134,7 +138,8 @@ int main(int argc, char *argv[])
     //Create ros handler to node
     ros::init(argc, argv, "uwb_driver");
     ros::NodeHandle uwbDriverNodeHandle("~");
-    ros::Publisher uwb_publisher;
+    ros::Publisher uwb_range_publisher;
+    ros::Publisher uwb_data_publisher;
 
     /*-----------------------------------------------Mischelaneous-----------------------------------------------------------*/
     bool restEnable = true;
@@ -181,6 +186,11 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    //we should have collected all ids by this point
+    nodesId = ancsId;
+    nodesId.insert(nodesId.end(), ancsId.begin(), ancsId.end());
+    nodesTotal = nodesId.size();
+
     //Collect the anchors Positions
     if(uwbDriverNodeHandle.getParam("ancsPos", ancsPos))
     {
@@ -203,10 +213,7 @@ int main(int argc, char *argv[])
         }
     }
     else
-    {
-        printf(KRED "Failed to collect anchor IDs, terminating program!\n" RESET);
-        return 0;
-    }
+        printf(KRED "Anchor's location not found!\n" RESET);
 
     int mode = MODE_RN;
     //check for the mode selected
@@ -251,7 +258,8 @@ int main(int argc, char *argv[])
         if(publishUwbInfo)
         {
             printf(KBLU "Retrieved value 'true' for param 'publishUwbData'!\n" RESET);
-            uwb_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_info> ("uwb_info", 0);
+            uwb_range_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_range_info>("uwb_range_info", 0);
+            uwb_data_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_data_info>("uwb_data_info", 0);
         }
 
         else
@@ -259,7 +267,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf(KYEL "Couldn't retrieve param 'publishUwbInfo', program will proceed without publishing uwb poses!\n" RESET);
+        printf(KYEL "Couldn't retrieve param 'publishUwbInfo', program will proceed without publishing uwb data!\n" RESET);
         publishUwbInfo = false;
     }
 
@@ -492,21 +500,33 @@ int main(int argc, char *argv[])
     //get the initial position by trilaterating the average
     while(ros::ok())
     {
+        uint8_T msg_type = -1;
         //Check and find the coresponding index of the update
         int nodeIndex = -1;
-        double newRange = -1.0;
-        switch (rcmInfoGet(&rangeInfo, &ndbInfo))//get distance
+        switch (rcmInfoGet(&rangeInfo, &dataInfo, &ndbInfo))//get distance
         {
         case RANGEINFO:
         {
             if(rangeInfo.precisionRangeMm < 75000)
-                for(int i = 0; i < ancsTotal; i++)
-                    if((uint32_T)ancsId[i] == rangeInfo.responderId)
+            {
+                for(int i = 0; i < nodesTotal; i++)
+                    if((uint32_T)nodesId[i] == rangeInfo.responderId)
                     {
                         nodeIndex = i;
-                        newRange = rangeInfo.precisionRangeMm/1000.0;
+                        msg_type = RANGEINFO;
                         break;
                     }
+            }
+        }
+        case DATAINFO:
+        {
+            for(int i = 0; i < nodesTotal; i++)
+                if((uint32_T)nodesId[i] == dataInfo.sourceId)
+                {
+                    nodeIndex = i;
+                    msg_type = DATAINFO;
+                    break;
+                }
         }
 
         default:
@@ -516,26 +536,70 @@ int main(int argc, char *argv[])
 
         if (nodeIndex != -1)
         {
-            uwb_driver::uwb_info uwb_info_msg;
-            uwb_info_msg.distance = newRange;
-            uwb_info_msg.antenna = rangeInfo.antennaMode;
-            uwb_info_msg.responder_location.x = ancsPos[nodeIndex*3];
-            uwb_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
-            uwb_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
-            uwb_info_msg.responder_id = ancsId[nodeIndex];
-            uwb_info_msg.responder_idx = nodeIndex;
-            uwb_info_msg.uwb_time = rangeInfo.timestamp;
-            printf("---\n");
-            uwb_publisher.publish(uwb_info_msg);
-            printf("Index:%d\tID:%d\tRange: %f\ttu = %zu\tant=%d\trqstr loc: %.3f\t%.3f\t%.3f\n",
-                   uwb_info_msg.responder_idx+1,
-                   uwb_info_msg.responder_id,
-                   uwb_info_msg.distance,
-                   uwb_info_msg.uwb_time,
-                   uwb_info_msg.antenna,
-                   uwb_info_msg.responder_location.x,
-                   uwb_info_msg.responder_location.y,
-                   uwb_info_msg.responder_location.z);
+            if(msg_type == RANGEINFO)
+            {
+                uwb_driver::uwb_range_info uwb_range_info_msg;
+                uwb_range_info_msg.stamp = ros::Time::now();
+                uwb_range_info_msg.responder_id = nodesId[nodeIndex];
+                uwb_range_info_msg.responder_idx = nodeIndex;
+                uwb_range_info_msg.distance = rangeInfo.precisionRangeMm/1000.0;
+                uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000;
+                uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
+                uwb_range_info_msg.distance_dot_err = rangeInfo.filteredRangeVel/1000.0;
+                uwb_range_info_msg.antenna = rangeInfo.antennaMode;
+                uwb_range_info_msg.stopwatch_time = rangeInfo.stopwatchTime;
+                uwb_range_info_msg.uwb_time = rangeInfo.timestamp;
+                uwb_range_info_msg.responder_location.x = ancsPos[nodeIndex*3];
+                uwb_range_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
+                uwb_range_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
+
+                uwb_range_publisher.publish(uwb_range_info_msg);
+
+                printf("Received distance message:Time=%f\tIndex=%d\tID=%d\td=%f, de = %f, dd = %f, dde = %f\tsw=%d\ttu = %zu\tant=%d\tx=%.3f\ty=%.3f\tz=%.3f\n",
+                       uwb_range_info_msg.stamp.toSec(),
+                       uwb_range_info_msg.responder_idx+1,
+                       uwb_range_info_msg.responder_id,
+                       uwb_range_info_msg.distance,
+                       uwb_range_info_msg.distance_err,
+                       uwb_range_info_msg.distance_dot,
+                       uwb_range_info_msg.distance_dot_err,
+                       uwb_range_info_msg.stopwatch_time,
+                       uwb_range_info_msg.uwb_time,
+                       uwb_range_info_msg.antenna,
+                       uwb_range_info_msg.responder_location.x,
+                       uwb_range_info_msg.responder_location.y,
+                       uwb_range_info_msg.responder_location.z);
+                printf("___________\n");
+
+            }
+            else if(msg_type == DATAINFO)
+            {
+                uwb_driver::uwb_data_info uwb_data_info_msg;
+
+                uwb_data_info_msg.stamp = ros::Time::now();
+                uwb_data_info_msg.source_id = nodesId[nodeIndex];
+                uwb_data_info_msg.source_idx = nodeIndex;
+
+                uwb_data_info_msg.antenna = dataInfo.antennaId;
+                uwb_data_info_msg.uwb_time = dataInfo.timestamp;
+                uwb_data_info_msg.data_size = dataInfo.dataSize;
+                uwb_data_info_msg.data.insert(uwb_data_info_msg.data.end(), &dataInfo.data[0], &dataInfo.data[dataInfo.dataSize-1]);
+
+                uwb_data_publisher.publish(uwb_data_info_msg);
+
+                printf("Received data message: Time=%f\tIndex:%d\tID:%d\ttu = %zu\tant=%d\trqstr loc: %.3f\t%.3f\t%.3f\n",
+                       uwb_data_info_msg.stamp.toSec(),
+                       uwb_data_info_msg.source_idx + 1,
+                       uwb_data_info_msg.source_id,
+                       uwb_data_info_msg.uwb_time,
+                       uwb_data_info_msg.antenna);
+                printf("Received %d bytes: ", dataInfo.dataSize);
+                for(int i = 0; i < dataInfo.dataSize; i++)
+                    printf("%02x ", dataInfo.data[i]);
+                printf("\n");
+
+
+            }
         }
 
         if(restEnable)

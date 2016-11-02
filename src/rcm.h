@@ -179,7 +179,7 @@ int rcmStatusInfoGet(rcrmMsg_GetStatusInfoConfirm *statusInfo);
 //  If confirm message is not received, returns ERR.
 //
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-int rcmInfoGet(rcmMsg_FullRangeInfo *rangeInfo, rnMsg_GetFullNeighborDatabaseConfirm *ndbInfo);
+int rcmInfoGet(rcmMsg_FullRangeInfo *rangeInfo, rcmMsg_DataInfo *dataInfo, rnMsg_GetFullNeighborDatabaseConfirm *ndbInfo);
 
 //
 //  rcmDataSend
