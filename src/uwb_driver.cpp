@@ -555,8 +555,10 @@ int main(int argc, char *argv[])
 
                 uwb_range_publisher.publish(uwb_range_info_msg);
 
-                printf("RANGEINFO:Time=%.4f\tIndex=%d\tID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\ttu = %zu\tant=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
+                printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
                        uwb_range_info_msg.stamp.toSec(),
+                       uwb_range_info_msg.uwb_time,
+                       uwb_range_info_msg.antenna,
                        uwb_range_info_msg.responder_idx+1,
                        uwb_range_info_msg.responder_id,
                        uwb_range_info_msg.distance,
@@ -564,8 +566,6 @@ int main(int argc, char *argv[])
                        uwb_range_info_msg.distance_dot,
                        uwb_range_info_msg.distance_dot_err,
                        uwb_range_info_msg.stopwatch_time,
-                       uwb_range_info_msg.uwb_time,
-                       uwb_range_info_msg.antenna,
                        uwb_range_info_msg.responder_location.x,
                        uwb_range_info_msg.responder_location.y,
                        uwb_range_info_msg.responder_location.z);
@@ -586,15 +586,16 @@ int main(int argc, char *argv[])
 
                 uwb_data_publisher.publish(uwb_data_info_msg);
 
-                printf("DATAINFO: Time=%.4f\tIndex:%d\tID:%d\ttu = %zu\tant=%d\tData bytes: %d\t{",
+                printf("DATAINFO: Time=%.4f\ttu = %zu\tant=%d\tIndex:%d\tID:%d\tData bytes: %d\t{",
                        uwb_data_info_msg.stamp.toSec(),
-                       uwb_data_info_msg.source_idx + 1,
-                       uwb_data_info_msg.source_id,
                        uwb_data_info_msg.uwb_time,
                        uwb_data_info_msg.antenna,
+                       uwb_data_info_msg.source_idx + 1,
+                       uwb_data_info_msg.source_id,
                        dataInfo.dataSize);
-                for(int i = 0; i < dataInfo.dataSize; i++)
+                for(int i = 0; i < dataInfo.dataSize-1; i++)
                     printf("%02x ", dataInfo.data[i]);
+                printf("%02x", dataInfo.data[dataInfo.dataSize-1]);
                 printf("}\n");
 
 
