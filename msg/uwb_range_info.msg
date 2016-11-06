@@ -1,6 +1,6 @@
 time stamp					# ROS time stamp
-int8 responder_id				# Identity number of the responding P4xx
-int8 responder_idx				# Index number of the node in the responding array passed by rosparam
+uint8 responder_id				# Identity number of the responding P4xx
+uint8 responder_idx				# Index number of the node in the responding array passed by rosparam
 float64 distance				# Distance measurement
 float64 distance_err				# Error estimated by P4xx
 float64 distance_dot				# Range velocity estimated by Pxx

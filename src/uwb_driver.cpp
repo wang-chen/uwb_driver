@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
 
     //we should have collected all ids by this point
     nodesId = ancsId;
-    nodesId.insert(nodesId.end(), ancsId.begin(), ancsId.end());
+    nodesId.insert(nodesId.end(), mobsId.begin(), mobsId.end());
     nodesTotal = nodesId.size();
 
     //Collect the anchors Positions
@@ -503,7 +503,8 @@ int main(int argc, char *argv[])
         uint8_T msg_type = -1;
         //Check and find the coresponding index of the update
         int nodeIndex = -1;
-        switch (rcmInfoGet(&rangeInfo, &dataInfo, &ndbInfo))//get distance
+        uint8_T msg_type_rt = 1;
+        switch (msg_type_rt = rcmInfoGet(&rangeInfo, &dataInfo, &ndbInfo))//get distance
         {
         case RANGEINFO:
         {
@@ -533,7 +534,6 @@ int main(int argc, char *argv[])
             break;
 
         }
-
         if (nodeIndex != -1)
         {
             if(msg_type == RANGEINFO)
@@ -586,7 +586,7 @@ int main(int argc, char *argv[])
 
                 uwb_data_publisher.publish(uwb_data_info_msg);
 
-                printf("DATAINFO: Time=%.4f\ttu = %zu\tant=%d\tIndex:%d\tID:%d\tData bytes: %d\t{",
+                printf("DATAINFO: Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\tData bytes: %d\t{",
                        uwb_data_info_msg.stamp.toSec(),
                        uwb_data_info_msg.uwb_time,
                        uwb_data_info_msg.antenna,
