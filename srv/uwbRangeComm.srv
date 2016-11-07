@@ -1,0 +1,13 @@
+uint8 action		#This value specifies the specific action:
+                                #0: make a range request by the hosted p4xx
+                                #1: broadcast a message on the preconfigured channel
+                                #2: send a range request + broadcast data on a selected channel
+                                #3: set requester data (for network mode)
+                                #4: set responder data (for network mode)
+uint8 responder		#ID of the responder node
+uint8 antenna           #Antenna to be used for this command
+uint8 channel           #Channel to be specified for action 3
+uint16 data_size	#Number of data bytes to send
+uint8[] data		#Data array collected from the message
+---
+uint8 result		#result of the command, check for verbal reference in the 'srv_return_verbal.h'
