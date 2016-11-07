@@ -54,15 +54,15 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    uwb_range_info.msg
    uwb_data_info.msg
-#   Message2.msg
  )
 
+
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+ add_service_files(
+   FILES
+   uwbModeConfig.srv
+   uwbRangeComm.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -124,6 +124,7 @@ catkin_package(
 include_directories(
 	${catkin_INCLUDE_DIRS}
 	src/
+	include/
 )
 
 ## Declare a C++ library

@@ -40,8 +40,14 @@
 #include "time.h"
 #include <arpa/inet.h>
 
-#include "uwb_driver/uwb_range_info.h"  //self-defined msg file
-#include "uwb_driver/uwb_data_info.h"   //self-defined msg file
+#include "uwb_driver/uwb_range_info.h"  //self-defined msg file to inform of a range info package from p4xx
+#include "uwb_driver/uwb_data_info.h"   //self-defined msg file to inform of a data info package from p4xx
+
+//Services headers
+#include "uwb_driver/uwbModeConfig.h"   //Mode selection service
+#include "uwb_driver/uwbRangeComm.h"
+#include "srv_return_verbal.h"
+
 //_____________________________________________________________________________
 //
 // Debugging utilities
@@ -58,15 +64,6 @@
 #define RESET "\033[0m"
 
 #define DFLT_NODE_RATE      40
-
-//_____________________________________________________________________________
-//
-// Logging declarations
-//_____________________________________________________________________________
-bool logEnable = false;
-
-std::ofstream fout;
-
 //_____________________________________________________________________________
 //
 // ID Management
@@ -84,17 +81,6 @@ uint8_T nodesTotal = 0;
 
 //_____________________________________________________________________________
 //
-// Timestamps Management
-//_____________________________________________________________________________
-
-double uwbStartTime;
-uint32_T uwbStartTimeInt32 = -1;
-double localStartTime;
-double uwbLastUpdateTime;
-static uint8_T nodeId = 1;		//WARNING: MATLAB GENERATED FUNCTION USES INDEX 1 FOR 1ST ELEMENT
-
-//_____________________________________________________________________________
-//
 // P4xx Serial Communications
 //_____________________________________________________________________________
 #define     DFLT_P4xx_PORT          "/dev/ttyACM0"
@@ -104,8 +90,6 @@ static uint8_T nodeId = 1;		//WARNING: MATLAB GENERATED FUNCTION USES INDEX 1 FO
 
 #define     MODE_RCM                0
 #define     MODE_RN                 1
-
-
 
 extern int msgIdCount;
 
@@ -121,10 +105,349 @@ rnMsg_GetFullNeighborDatabaseConfirm ndbInfo;
 rcmMsg_DataInfo dataInfo;
 uint8_T uwb_msg[RN_USER_DATA_LENGTH];
 
-/*------------------------------------------------------Function prototypes---------------------------------------------*/
-double getLocalTimeNow();
+//_____________________________________________________________________________
+//
+// Functions-wide shared variable
+//_____________________________________________________________________________
+static uint8_T hostedP4xxId = 1;
+int p4xxMode = MODE_RCM;
 
-uint32_T rcmGetTime();
+
+/*------------------------------------------------------Function prototypes---------------------------------------------*/
+bool uwb_mode_config(uwb_driver::uwbModeConfig::Request &req, uwb_driver::uwbModeConfig::Response &res)
+{
+    ros::Time startTime = ros::Time::now();
+    int success = -1;
+
+    // Set the mode with 1 second time out
+    while(ros::ok() && (ros::Time::now() - startTime).toSec() < 2)
+    {
+        success = -1;
+        if(req.p4xxmode == MODE_RCM)
+            success = rcmOpModeSet(RCRM_OPMODE_RCM);
+        else if(req.p4xxmode == MODE_RN)
+            success = rcmOpModeSet(RCRM_OPMODE_RN);
+        else
+        {
+            ROS_INFO("There's no mode %d\n", req.p4xxmode);
+            return true;
+        }
+
+        if (success != OK)
+            ROS_INFO("Time out waiting for opmode confirm. Retrying...\n");
+        else
+        {
+            ROS_INFO(KGRN "Mode %d confirmed!" RESET, req.p4xxmode);
+            res.result = P4XX_CONFIRMED;
+            p4xxMode = req.p4xxmode;
+            return true;
+        }
+    }
+
+    if(success != OK)
+    {
+        ROS_INFO(KRED "Time out to get confirm!" RESET);
+        res.result = P4XX_CONFIRM_TIMEOUT;
+    }
+
+    return true;
+}
+
+bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRangeComm::Response &res)
+{
+    switch(req.action)
+    {
+    case RANGE_RQST:
+    {
+        rcmMsg_SendRangeRequest request;
+        rcmMsg_SendRangeRequestConfirm confirm;
+
+        // create request message
+        request.msgType = htons(RCM_SEND_RANGE_REQUEST);
+        request.msgId = htons(msgIdCount++);
+        request.responderId = htonl(req.responder);
+        request.antennaMode = req.antenna;
+        request.dataSize = htons(0);
+
+        // make sure no pending messages
+        rcmIfFlush();
+
+        // send message to RCM
+        int numBytes = sizeof(request) - RCM_USER_DATA_LENGTH + request.dataSize;
+        rcmIfSendPacket(&request, numBytes);
+
+        // wait for response
+        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+
+        // did we get a response from the RCM?
+        if (numBytes == sizeof(confirm))
+        {
+            // Handle byte ordering
+            confirm.msgType = ntohs(confirm.msgType);
+            confirm.msgId = ntohs(confirm.msgId);
+
+            // is this the correct message type?
+            if (confirm.msgType == RCM_SEND_RANGE_REQUEST_CONFIRM)
+            {
+                res.result = P4XX_CONFIRMED;
+                ROS_INFO(KGRN "Range request confirmed by P4xx." RESET);
+            }
+            else
+            {
+                res.result = P4XX_CONFIRM_TIMEOUT;
+                ROS_INFO("Returned message: 0x%0x", confirm.msgType);
+                ROS_INFO(KYEL "Range request not confirmed by P4xx." RESET);
+            }
+
+        }
+        else
+        {
+            res.result = P4XX_CONFIRM_TIMEOUT;
+            ROS_INFO(KYEL "Confirm message not received" RESET);
+        }
+
+        break;
+    }
+    case SEND_DATA:
+    {
+        rcmMsg_SendDataRequest request;
+        rcmMsg_SendDataConfirm confirm;
+        int numBytes;
+
+        int dataSize = req.data_size;
+
+        // create request message
+        request.msgType = htons(RCM_SEND_DATA_REQUEST);
+        request.msgId = htons(msgIdCount++);
+        request.antennaMode = req.antenna;
+        request.dataSize = htons(dataSize);
+        // make sure there isn't too much data
+        if (dataSize > RCM_USER_DATA_LENGTH)
+            dataSize = RCM_USER_DATA_LENGTH;
+
+        // copy data into message
+        memcpy(request.data, &req.data[0], dataSize);
+
+        // make sure no pending messages
+        rcmIfFlush();
+
+        // send message to RCM
+        numBytes = sizeof(request) - RCM_USER_DATA_LENGTH + dataSize;
+        rcmIfSendPacket(&request, sizeof(request));
+
+        // wait for response
+        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+
+        // did we get a response from the RCM?
+        if (numBytes == sizeof(confirm))
+        {
+            // Handle byte ordering
+            confirm.msgType = ntohs(confirm.msgType);
+            confirm.msgId = ntohs(confirm.msgId);
+
+            // is this the correct message type?
+            if (confirm.msgType == RCM_SEND_DATA_CONFIRM)
+            {
+                // status code
+                confirm.status = ntohl(confirm.status);
+                // only return OK if status is OK
+                if (confirm.status == OK)
+                {
+                    res.result = P4XX_CONFIRMED;
+                    ROS_INFO(KGRN "Data broadcast confirmed by P4xx." RESET);
+                }
+            }
+            else
+            {
+                res.result = P4XX_CONFIRM_TIMEOUT;
+                ROS_INFO(KYEL "Data broadcast not confirmed by P4xx." RESET);
+            }
+        }
+        else
+        {
+            res.result = P4XX_CONFIRM_TIMEOUT;
+            ROS_INFO(KYEL "Confirm message not received!" RESET);
+        }
+
+        break;
+    }
+    case RANGE_RQST_DATA:
+    {
+        rcmMsg_SendChannelizedRangeRequest request;
+        rcmMsg_SendChannelizedRangeRequestConfirm confirm;
+
+        int dataSize = req.data_size;
+
+        // create request message
+        request.msgType = htons(RCM_SEND_CHANNELIZED_RANGE_REQUEST);
+        request.msgId = htons(msgIdCount);
+        request.responderId = htonl(req.responder);
+        request.antennaMode = req.antenna;
+        request.codeChannel = req.channel;
+        request.dataSize = dataSize;
+
+        memcpy(request.data, &req.data[0], dataSize);
+
+        // make sure no pending messages
+        rcmIfFlush();
+
+        // send message to RCM
+        int numBytes = sizeof(request) - RCM_USER_DATA_LENGTH + request.dataSize;
+        rcmIfSendPacket(&request, numBytes);
+
+        // wait for response
+        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+
+        // did we get a response from the RCM?
+        if (numBytes == sizeof(confirm))
+        {
+            // Handle byte ordering
+            confirm.msgType = ntohs(confirm.msgType);
+            confirm.msgId = ntohs(confirm.msgId);
+
+            // is this the correct message type?
+            if (confirm.msgType == RCM_SEND_CHANNELIZED_RANGE_REQUEST_CONFIRM)
+            {
+                res.result = P4XX_CONFIRMED;
+                ROS_INFO(KGRN "Range + Data request confirmed by P4xx." RESET);
+            }
+            else
+            {
+                res.result = P4XX_CONFIRM_TIMEOUT;
+                ROS_INFO("Returned message: 0x%0x", confirm.msgType);
+                ROS_INFO(KYEL "Range + Data request not confirmed by P4xx." RESET);
+            }
+
+        }
+        else
+        {
+            res.result = P4XX_CONFIRM_TIMEOUT;
+            ROS_INFO(KYEL "Confirm message not received!" RESET);
+        }
+
+        break;
+    }
+    case SET_RQST_DATA:
+    {
+        rnMsg_SetRequestDataRequest request;
+        rnMsg_SetRequestDataConfirm confirm;
+
+        int dataSize = req.data_size;
+
+        int numBytes;
+
+        // create request message
+        request.msgType = htons(RN_SET_REQUEST_USER_DATA_REQUEST);
+        request.msgId = htons(msgIdCount++);
+        request.dataSize = htons(dataSize);
+
+        memcpy(request.data, &req.data[0], dataSize);
+        rcmIfFlush();
+
+        // send message to RCM
+        rcmIfSendPacket(&request, sizeof(request));
+
+        // wait for response
+        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+
+        // did we get a response from the RCM?
+        if (numBytes == sizeof(rnMsg_SetRequestDataConfirm))
+        {
+            // Handle byte ordering
+            confirm.msgType = ntohs(confirm.msgType);
+            confirm.msgId = ntohs(confirm.msgId);
+
+            // is this the correct message type?
+            if (confirm.msgType == RN_SET_REQUEST_USER_DATA_CONFIRM)
+            {
+                // status code
+                confirm.status = ntohl(confirm.status);
+                // only return OK if status is OK
+                if (confirm.status == OK)
+                {
+                    res.result = P4XX_CONFIRMED;
+                    ROS_INFO(KGRN "Set request data confirmed by P4xx." RESET);
+                }
+                else
+                {
+                    res.result = P4XX_CONFIRM_TIMEOUT;
+                    ROS_INFO("Returned message: %d", confirm.msgType);
+                    ROS_INFO(KYEL "Set request data not confirmed by P4xx." RESET);
+                }
+            }
+        }
+        else
+        {
+            res.result = P4XX_CONFIRM_TIMEOUT;
+            ROS_INFO(KYEL "Confirm message not received!" RESET);
+        }
+
+        break;
+
+    }
+    case SET_RSPD_DATA:
+    {
+        rnMsg_SetResponseDataRequest request;
+        rnMsg_SetResponseDataConfirm confirm;
+
+        int dataSize = req.data_size;
+
+        int numBytes;
+
+        // create request message
+        request.msgType = htons(RN_SET_RESPONSE_USER_DATA_REQUEST);
+        request.msgId = htons(msgIdCount++);
+        request.dataSize = htons(dataSize);
+
+        memcpy(request.data, &req.data[0], dataSize);
+        rcmIfFlush();
+
+        // send message to RCM
+        rcmIfSendPacket(&request, sizeof(request));
+
+        // wait for response
+        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+
+        // did we get a response from the RCM?
+        if (numBytes == sizeof(rnMsg_SetResponseDataConfirm))
+        {
+            // Handle byte ordering
+            confirm.msgType = ntohs(confirm.msgType);
+            confirm.msgId = ntohs(confirm.msgId);
+
+            // is this the correct message type?
+            if (confirm.msgType == RN_SET_RESPONSE_USER_DATA_CONFIRM)
+            {
+                // status code
+                confirm.status = ntohl(confirm.status);
+                // only return OK if status is OK
+                if (confirm.status == OK)
+                {
+                    res.result = P4XX_CONFIRMED;
+                    ROS_INFO(KGRN "Set response data confirmed by P4xx." RESET);
+                }
+                else
+                {
+                    res.result = P4XX_CONFIRM_TIMEOUT;
+                    ROS_INFO("Returned message: %d", confirm.msgType);
+                    ROS_INFO(KYEL "Set response data not confirmed by P4xx." RESET);
+                }
+            }
+        }
+        else
+        {
+            res.result = P4XX_CONFIRM_TIMEOUT;
+            ROS_INFO(KYEL "Confirm message not received!" RESET);
+        }
+        break;
+
+    }
+    default:
+        break;
+    }
+
+    return true;
+}
 /*------------------------------------------------------Function prototypes---------------------------------------------*/
 
 //_____________________________________________________________________________
@@ -146,9 +469,9 @@ int main(int argc, char *argv[])
     if(uwbDriverNodeHandle.getParam("restEnable", restEnable))
     {
         if(restEnable)
-            printf(KBLU "uwb node allowed to sleep!\n" RESET);
+            printf(KBLU "UWB node allowed to sleep!\n" RESET);
         else
-            printf(KBLU "not resting at all!\n" RESET);
+            printf(KBLU "Not resting at all!\n" RESET);
     }
     else
     {
@@ -215,16 +538,15 @@ int main(int argc, char *argv[])
     else
         printf(KRED "Anchor's location not found!\n" RESET);
 
-    int mode = MODE_RN;
     //check for the mode selected
-    if(uwbDriverNodeHandle.getParam("mode", mode))
-        switch((char)mode)
+    if(uwbDriverNodeHandle.getParam("p4xxMode", p4xxMode))
+        switch((char)p4xxMode)
         {
-        case 'u':
-            printf(KBLU "Normal mode selected.\n" RESET);
+        case 0:
+            printf(KBLU "RCM p4xxMode selected.\n" RESET);
             break;
         default:
-            printf(KBLU "Default mode selected.\n" RESET);
+            printf(KBLU "RN p4xxMode selected.\n" RESET);
             break;
         }
     else
@@ -258,8 +580,8 @@ int main(int argc, char *argv[])
         if(publishUwbInfo)
         {
             printf(KBLU "Retrieved value 'true' for param 'publishUwbData'!\n" RESET);
-            uwb_range_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_range_info>("uwb_range_info", 0);
-            uwb_data_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_data_info>("uwb_data_info", 0);
+            uwb_range_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_range_info>("/uwb_range_info", 0);
+            uwb_data_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_data_info>("/uwb_data_info", 0);
         }
 
         else
@@ -271,20 +593,6 @@ int main(int argc, char *argv[])
         publishUwbInfo = false;
     }
 
-    bool enableVicon = false;
-    if(uwbDriverNodeHandle.getParam("enableVicon", enableVicon))
-    {
-        if(enableVicon)
-            printf(KBLU "Retrieved value 'true' for param 'enableVicon'!\n" RESET);
-
-        else
-            printf(KBLU "Retrieved value 'false' for param 'enableVicon'!\n" RESET);
-    }
-    else
-    {
-        printf(KYEL "Couldn't retrieve param 'enableVicon', program will proceed without publishing uwb poses to enable vicon!\n" RESET);
-        enableVicon = false;
-    }
     /*-----------------------------------------------Mischelaneous-----------------------------------------------------------*/
 
 
@@ -333,24 +641,68 @@ int main(int argc, char *argv[])
         autoConfigRn = false;
     }
 
-    //initialize P4xx serial interface
+    printf("\nRCM Localization App\n\n");
+
+    if(p4xxInterface == P4XX_ITF_SERIAL)
+        rcmIf = rcmIfSerial;
+    else if (p4xxInterface == P4XX_ITF_USB)
+        rcmIf = rcmIfUsb;
+
+    // initialize the interface to the RCM
+    if (rcmIfInit(rcmIf, &p4xxSerialPort[0]) != OK)
     {
-        printf("\nRCM Localization App\n\n");
+        printf("Initialization failed.\n");
+        if(!ignrTimeoutUwbInit)
+            exit(0);
+    }
 
-        if(p4xxInterface == P4XX_ITF_SERIAL)
-            rcmIf = rcmIfSerial;
-        else if (p4xxInterface == P4XX_ITF_USB)
-            rcmIf = rcmIfUsb;
+    // Make sure RCM is awake
+    if (rcmSleepModeSet(RCRM_SLEEP_MODE_ACTIVE) != 0)
+    {
+        printf("Time out waiting for sleep mode set.\n");
+        if(!ignrTimeoutUwbInit)
+            exit(0);
+    }
 
-        // initialize the interface to the RCM
-        if (rcmIfInit(rcmIf, &p4xxSerialPort[0]) != OK)
+    // execute Built-In Test - verify that radio is healthy
+    if (rcmBit(&status) != 0)
+    {
+        printf("Time out waiting for BIT.\n");
+        if(!ignrTimeoutUwbInit)
+            exit(0);
+    }
+
+    if (status != OK)
+    {
+        printf("Built-in test failed - status %d.\n", status);
+        if(!ignrTimeoutUwbInit)
+            exit(0);
+    }
+    else
+    {
+        printf("Radio passes built-in test.\n\n");
+    }
+
+    // retrieve config from RCM
+    if (rcmConfigGet(&rcmConfig) != 0)
+    {
+        printf("Time out waiting for config confirm.\n");
+        if(!ignrTimeoutUwbInit)
+            exit(0);
+    }
+
+    //initialize P4xx serial interface
+    if(p4xxMode == MODE_RCM)
+    {
+        // Make sure opmode is RN mode
+        while(rcmOpModeSet(RCRM_OPMODE_RCM) != 0 && ros::ok())
         {
-            printf("Initialization failed.\n");
+            printf("Time out waiting for opmode set.\n");
             if(!ignrTimeoutUwbInit)
                 exit(0);
         }
 
-        // Make sure RCM is awake
+        // Set the P4xx to active mode
         if (rcmSleepModeSet(RCRM_SLEEP_MODE_ACTIVE) != 0)
         {
             printf("Time out waiting for sleep mode set.\n");
@@ -358,33 +710,9 @@ int main(int argc, char *argv[])
                 exit(0);
         }
 
-        // execute Built-In Test - verify that radio is healthy
-        if (rcmBit(&status) != 0)
-        {
-            printf("Time out waiting for BIT.\n");
-            if(!ignrTimeoutUwbInit)
-                exit(0);
-        }
-
-        if (status != OK)
-        {
-            printf("Built-in test failed - status %d.\n", status);
-            if(!ignrTimeoutUwbInit)
-                exit(0);
-        }
-        else
-        {
-            printf("Radio passes built-in test.\n\n");
-        }
-
-        // retrieve config from RCM
-        if (rcmConfigGet(&rcmConfig) != 0)
-        {
-            printf("Time out waiting for config confirm.\n");
-            if(!ignrTimeoutUwbInit)
-                exit(0);
-        }
-
+    }
+    else
+    {
         if(autoConfigRn)
         {
             // Set the NDB Neighbor Age arbitrarily high to keep nodes from dropping out
@@ -413,13 +741,13 @@ int main(int argc, char *argv[])
             int32_T uwbNodeId = rcmConfig.nodeId;
 
             //search for index in the mobile profile
-            nodeId = 255;
+            hostedP4xxId = 255;
 
-            for (uint32_T i = 0; i < mobsId.size(); i++)
-                if(uwbNodeId == mobsId[i])
-                    nodeId = i;
+            for (uint32_T i = 0; i < nodesTotal; i++)
+                if(uwbNodeId == nodesId[i])
+                    hostedP4xxId = i;
 
-            if(nodeId == 255)
+            if(hostedP4xxId == 255)
             {
                 printf("Node not involved! Exiting\n");
                 exit(0);
@@ -465,33 +793,14 @@ int main(int argc, char *argv[])
                 exit(0);
         }
     }
+
+    ros::ServiceServer modeService = uwbDriverNodeHandle.advertiseService("/uwb_mode_config", uwb_mode_config);
+    ROS_INFO(KGRN "UWB MODE SERVICE AVAILABLE." RESET);
+
+    ros::ServiceServer rangeCommService = uwbDriverNodeHandle.advertiseService("/uwb_range_comm", uwb_range_comm);
+    ROS_INFO(KGRN "UWB RANGE-COMM SERVICE AVAILABLE" RESET);
+
     /*-----------------------------------------P4xx interface configuration---------------------------------------------------*/
-
-
-    /*-------------------------------------------Logging Initialization---------------------------------------------------------*/
-    if(uwbDriverNodeHandle.getParam("logEnable", logEnable))
-    {
-        if(logEnable)
-            printf(KBLU "Logging enabled!\n" RESET);
-        else
-            printf(KBLU "Logging disabled!\n" RESET);
-    }
-    else
-    {
-        printf(KRED "Couldn't retrieve param 'logEnable'. Not used by default." RESET);
-        logEnable = false;
-    }
-
-
-    struct passwd *pw = getpwuid(getuid());
-    std::string logFileName;
-    if(logEnable)
-    {
-        logFileName = string(pw->pw_dir) + std::string("/uwb_log/dists.csv");
-        printf("%s\n", logFileName.data());
-        fout.open(logFileName.data());
-    }
-    /*-------------------------------------------Logging Initialization---------------------------------------------------------*/
 
 
     /*-------------------------------------------------Initial Trilateration----------------------------------------------------*/
@@ -500,6 +809,7 @@ int main(int argc, char *argv[])
     //get the initial position by trilaterating the average
     while(ros::ok())
     {
+        ros::spinOnce();
         uint8_T msg_type = -1;
         //Check and find the coresponding index of the update
         int nodeIndex = -1;
@@ -553,7 +863,8 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
                 uwb_range_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
 
-                uwb_range_publisher.publish(uwb_range_info_msg);
+                if(publishUwbInfo)
+                    uwb_range_publisher.publish(uwb_range_info_msg);
 
                 printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
                        uwb_range_info_msg.stamp.toSec(),
@@ -584,7 +895,8 @@ int main(int argc, char *argv[])
                 uwb_data_info_msg.data_size = dataInfo.dataSize;
                 uwb_data_info_msg.data.insert(uwb_data_info_msg.data.end(), &dataInfo.data[0], &dataInfo.data[dataInfo.dataSize-1]);
 
-                uwb_data_publisher.publish(uwb_data_info_msg);
+                if(publishUwbInfo)
+                    uwb_data_publisher.publish(uwb_data_info_msg);
 
                 printf("DATAINFO: Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\tData bytes: %d\t{",
                        uwb_data_info_msg.stamp.toSec(),
@@ -594,8 +906,8 @@ int main(int argc, char *argv[])
                        uwb_data_info_msg.source_id,
                        dataInfo.dataSize);
                 for(int i = 0; i < dataInfo.dataSize-1; i++)
-                    printf("%02x ", dataInfo.data[i]);
-                printf("%02x", dataInfo.data[dataInfo.dataSize-1]);
+                    printf(KGRN "%02x ", dataInfo.data[i]);
+                printf("%02x" RESET, dataInfo.data[dataInfo.dataSize-1]);
                 printf("}\n");
 
 
@@ -605,5 +917,8 @@ int main(int argc, char *argv[])
         if(restEnable)
             sleepTime.sleep();
     }
+
+    //Attempt to set the device to RCM
+    rcmOpModeSet(RCRM_OPMODE_RCM);
     rcmIfClose();
 }
