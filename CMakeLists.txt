@@ -151,7 +151,7 @@ add_executable(uwb_driver_node src/uwb_driver.cpp ${UWB_SRCS})
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(uwb_driver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(uwb_driver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(uwb_driver_node
