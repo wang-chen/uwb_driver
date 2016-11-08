@@ -556,11 +556,11 @@ int main(int argc, char *argv[])
     }
 
     //Redundant
-    int p44QueryRate = DFLT_NODE_RATE;
-    if(uwbDriverNodeHandle.getParam("p44QueryRate", p44QueryRate))
-        printf(KBLU "Retrieved value %d for param 'p44QueryRate'\n" RESET, p44QueryRate);
+    int p4xxQueryRate = DFLT_NODE_RATE;
+    if(uwbDriverNodeHandle.getParam("p4xxQueryRate", p4xxQueryRate))
+        printf(KBLU "Retrieved value %d for param 'p4xxQueryRate'\n" RESET, p4xxQueryRate);
     else
-        printf(KYEL "Couldn't retrieve param 'p44QueryRate', applying default value %dHz\n" RESET, p44QueryRate);
+        printf(KYEL "Couldn't retrieve param 'p4xxQueryRate', applying default value %dHz\n" RESET, p4xxQueryRate);
 
     bool ignrTimeoutUwbInit = true;
     if(uwbDriverNodeHandle.getParam("ignrTimeoutUwbInit", ignrTimeoutUwbInit))
@@ -805,7 +805,7 @@ int main(int argc, char *argv[])
 
     /*-------------------------------------------------Initial Trilateration----------------------------------------------------*/
 
-    ros::Duration sleepTime = ros::Duration(1.0/p44QueryRate);
+    ros::Duration sleepTime = ros::Duration(1.0/p4xxQueryRate);
     //get the initial position by trilaterating the average
     while(ros::ok())
     {
