@@ -480,7 +480,7 @@ int main(int argc, char *argv[])
     }
 
     //Collect the mobile node IDs
-    if(uwbDriverNodeHandle.getParam("mobsId", mobsId))
+    if(uwbDriverNodeHandle.getParam("/uwb/mobsId", mobsId))
     {
         mobsTotal = mobsId.size();
         printf(KBLU "Retrieved %d mobile IDs: ", mobsTotal);
@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
     }
 
     //Collect the anchors IDs
-    if(uwbDriverNodeHandle.getParam("ancsId", ancsId))
+    if(uwbDriverNodeHandle.getParam("/uwb/ancsId", ancsId))
     {
         ancsTotal = ancsId.size();
         printf(KBLU "Retrieved %d anchor IDs: ", ancsTotal);
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
     nodesTotal = nodesId.size();
 
     //Collect the anchors Positions
-    if(uwbDriverNodeHandle.getParam("ancsPos", ancsPos))
+    if(uwbDriverNodeHandle.getParam("/uwb/ancsPos", ancsPos))
     {
         if( (ancsPos.size() / (double)ancsTotal) != 3)
         {

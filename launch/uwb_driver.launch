@@ -5,10 +5,10 @@
  <!-- uwb driver node -->
 
     <!-- configuration for the network -->
-	<rosparam param="/uwb_driver_node0/mobsId"> [200, 201, 202, 203, 204, 205, 206, 207, 208, 209]</rosparam>
-	<rosparam param="/uwb_driver_node0/ancsPos"> [1000, 1000, 1000, 1000, 1000, 1000, 1000,  1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]</rosparam>
-	<rosparam param="/uwb_driver_node0/ancsId"> [100, 101, 102, 103, 104]</rosparam>
-	<rosparam param="/uwb_driver_node0/albega"> [1.001966856066302, 0.108814649293333, 200]</rosparam> <!-- calibration values for the p4xx -->
+	<rosparam param="/uwb/mobsId"> [200, 201, 202, 203, 204, 205, 206, 207, 208, 209]</rosparam>
+	<rosparam param="/uwb/ancsPos"> [1000, 1000, 1000, 1000, 1000, 1000, 1000,  1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]</rosparam>
+	<rosparam param="/uwb/ancsId"> [100, 101, 102, 103, 104]</rosparam>
+	<rosparam param="/uwb/albega"> [1.001966856066302, 0.108814649293333, 200]</rosparam> <!-- calibration values for the p4xx -->
 	
   <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
             <!-- configuration for the node -->
