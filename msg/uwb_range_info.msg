@@ -1,4 +1,4 @@
-time stamp					# ROS time stamp
+Header header					# ROS header
 uint8 responder_id				# Identity number of the responding P4xx
 uint8 responder_idx				# Index number of the node in the responding array passed by rosparam
 float64 distance				# Distance measurement

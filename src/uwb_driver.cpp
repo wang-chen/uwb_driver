@@ -849,7 +849,9 @@ int main(int argc, char *argv[])
             if(msg_type == RANGEINFO)
             {
                 uwb_driver::uwb_range_info uwb_range_info_msg;
-                uwb_range_info_msg.stamp = ros::Time::now();
+                uwb_range_info_msg.header = std_msgs::Header();
+                uwb_range_info_msg.header.frame_id = "uwb";
+                uwb_range_info_msg.header.stamp = ros::Time::now();
                 uwb_range_info_msg.responder_id = nodesId[nodeIndex];
                 uwb_range_info_msg.responder_idx = nodeIndex;
                 uwb_range_info_msg.distance = rangeInfo.precisionRangeMm/1000.0;
@@ -867,7 +869,7 @@ int main(int argc, char *argv[])
                     uwb_range_publisher.publish(uwb_range_info_msg);
 
                 printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
-                       uwb_range_info_msg.stamp.toSec(),
+                       uwb_range_info_msg.header.stamp.toSec(),
                        uwb_range_info_msg.uwb_time,
                        uwb_range_info_msg.antenna,
                        uwb_range_info_msg.responder_idx+1,
@@ -885,8 +887,9 @@ int main(int argc, char *argv[])
             else if(msg_type == DATAINFO)
             {
                 uwb_driver::uwb_data_info uwb_data_info_msg;
-
-                uwb_data_info_msg.stamp = ros::Time::now();
+                uwb_data_info_msg.header = std_msgs::Header();
+                uwb_data_info_msg.header.frame_id = "uwb";
+                uwb_data_info_msg.header.stamp = ros::Time::now();
                 uwb_data_info_msg.source_id = nodesId[nodeIndex];
                 uwb_data_info_msg.source_idx = nodeIndex;
 
@@ -899,7 +902,7 @@ int main(int argc, char *argv[])
                     uwb_data_publisher.publish(uwb_data_info_msg);
 
                 printf("DATAINFO: Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\tData bytes: %d\t{",
-                       uwb_data_info_msg.stamp.toSec(),
+                       uwb_data_info_msg.header.stamp.toSec(),
                        uwb_data_info_msg.uwb_time,
                        uwb_data_info_msg.antenna,
                        uwb_data_info_msg.source_idx + 1,

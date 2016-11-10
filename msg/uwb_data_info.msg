@@ -1,4 +1,4 @@
-time stamp					# ROS time stamp
+Header header					# ROS header
 uint8 source_id					# Identity number of the data sending P4xx
 uint8 source_idx				# Index number of the data sending node passed by rosparam
 int8 antenna					# Antenna where the measurement was carried out
