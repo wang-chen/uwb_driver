@@ -109,7 +109,7 @@ uint8_T uwb_msg[RN_USER_DATA_LENGTH];
 //
 // Functions-wide shared variable
 //_____________________________________________________________________________
-static uint8_T hostedP4xxId = 1;
+static int32_T hostedP4xxId = -1;
 int p4xxMode = MODE_RCM;
 
 
@@ -415,6 +415,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
     return true;
 }
 
+
 /*------------------------------------------------------Function prototypes---------------------------------------------*/
 
 //_____________________________________________________________________________
@@ -619,8 +620,7 @@ int main(int argc, char *argv[])
     if (rcmIfInit(rcmIf, &p4xxSerialPort[0]) != OK)
     {
         printf("Initialization failed.\n");
-        if(!ignrTimeoutUwbInit)
-            exit(0);
+        exit(0);
     }
 
     // Make sure RCM is awake
@@ -656,6 +656,29 @@ int main(int argc, char *argv[])
         printf("Time out waiting for config confirm.\n");
         if(!ignrTimeoutUwbInit)
             exit(0);
+    }
+    else
+    {
+        //check for device node ID
+        int32_T uwbNodeId = rcmConfig.nodeId;
+
+        //search for index in the mobile profile
+        hostedP4xxId = -1;
+
+        for (uint32_T i = 0; i < nodesTotal; i++)
+            if(uwbNodeId == nodesId[i])
+                hostedP4xxId = uwbNodeId;
+
+        if(hostedP4xxId == -1)
+        {
+            printf("Node not involved! Exiting\n");
+            exit(0);
+        }
+        else
+        {
+            printf(KBLU "Device ID: %d\n" RESET, rcmConfig.nodeId);
+            uwbDriverNodeHandle.setParam("/uwb/hostedP4xxId", uwbNodeId);
+        }
     }
 
     //initialize P4xx serial interface
@@ -702,22 +725,6 @@ int main(int argc, char *argv[])
                 printf("Time out waiting for rnConfig confirm.\n");
                 if(!ignrTimeoutUwbInit)
                     exit(0);
-            }
-
-            //check for device node ID
-            int32_T uwbNodeId = rcmConfig.nodeId;
-
-            //search for index in the mobile profile
-            hostedP4xxId = 255;
-
-            for (uint32_T i = 0; i < nodesTotal; i++)
-                if(uwbNodeId == nodesId[i])
-                    hostedP4xxId = i;
-
-            if(hostedP4xxId == 255)
-            {
-                printf("Node not involved! Exiting\n");
-                exit(0);
             }
 
             printf(KYEL "Slotmap auto-configuration not yet developed! Using the current configuration!" RESET);
