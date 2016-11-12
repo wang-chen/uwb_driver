@@ -172,22 +172,20 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         // make sure no pending messages
         rcmIfFlush();
 
-        // send message to RCM
-        int numBytes = sizeof(request) - RCM_USER_DATA_LENGTH + request.dataSize;
-        rcmIfSendPacket(&request, numBytes);
+        // send request to RCM
+        rcmIfSendPacket(&request, sizeof(request));
 
         // wait for response
-        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+        int numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
 
         // did we get a response from the RCM?
         if (numBytes == sizeof(confirm))
         {
             // Handle byte ordering
             confirm.msgType = ntohs(confirm.msgType);
-            confirm.msgId = ntohs(confirm.msgId);
 
             // is this the correct message type?
-            if (confirm.msgType == RCM_SEND_RANGE_REQUEST_CONFIRM)
+            if(confirm.msgType == RCM_SEND_RANGE_REQUEST_CONFIRM && confirm.status == OK)
             {
                 res.result = P4XX_CONFIRMED;
                 ROS_INFO(KGRN "Range request confirmed by P4xx." RESET);
@@ -195,15 +193,14 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
             else
             {
                 res.result = P4XX_CONFIRM_TIMEOUT;
-                ROS_INFO("Returned message: 0x%0x", confirm.msgType);
-                ROS_INFO(KYEL "Range request not confirmed by P4xx." RESET);
+                ROS_INFO(KYEL "Range request error. Message Type: 0x%0x, Status: 0x%0x." RESET, confirm.msgType, confirm.status);
             }
 
         }
         else
         {
             res.result = P4XX_CONFIRM_TIMEOUT;
-            ROS_INFO(KYEL "Confirm message not received" RESET);
+            ROS_INFO(KYEL "Confirm message not properly received." RESET);
         }
 
         break;
@@ -212,7 +209,6 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
     {
         rcmMsg_SendDataRequest request;
         rcmMsg_SendDataConfirm confirm;
-        int numBytes;
 
         int dataSize = req.data_size;
 
@@ -232,41 +228,33 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         rcmIfFlush();
 
         // send message to RCM
-        numBytes = sizeof(request) - RCM_USER_DATA_LENGTH + dataSize;
         rcmIfSendPacket(&request, sizeof(request));
 
         // wait for response
-        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+        int numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
 
         // did we get a response from the RCM?
         if (numBytes == sizeof(confirm))
         {
             // Handle byte ordering
             confirm.msgType = ntohs(confirm.msgType);
-            confirm.msgId = ntohs(confirm.msgId);
 
             // is this the correct message type?
-            if (confirm.msgType == RCM_SEND_DATA_CONFIRM)
+            if (confirm.msgType == RCM_SEND_DATA_CONFIRM && confirm.status == OK)
             {
-                // status code
-                confirm.status = ntohl(confirm.status);
-                // only return OK if status is OK
-                if (confirm.status == OK)
-                {
-                    res.result = P4XX_CONFIRMED;
-                    ROS_INFO(KGRN "Data broadcast confirmed by P4xx." RESET);
-                }
+                res.result = P4XX_CONFIRMED;
+                ROS_INFO(KGRN "Data broadcast confirmed by P4xx." RESET);
             }
             else
             {
                 res.result = P4XX_CONFIRM_TIMEOUT;
-                ROS_INFO(KYEL "Data broadcast not confirmed by P4xx." RESET);
+                ROS_INFO(KYEL "Data broadcast error. Message Type: 0x%0x, Status: 0x%0x." RESET, confirm.msgType, confirm.status);
             }
         }
         else
         {
             res.result = P4XX_CONFIRM_TIMEOUT;
-            ROS_INFO(KYEL "Confirm message not received!" RESET);
+            ROS_INFO(KYEL "Confirm message not properly received." RESET);
         }
 
         break;
@@ -284,7 +272,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         request.responderId = htonl(req.responder);
         request.antennaMode = req.antenna;
         request.codeChannel = req.channel;
-        request.dataSize = dataSize;
+        request.dataSize = htons(dataSize);
 
         memcpy(request.data, &req.data[0], dataSize);
 
@@ -292,21 +280,19 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         rcmIfFlush();
 
         // send message to RCM
-        int numBytes = sizeof(request) - RCM_USER_DATA_LENGTH + request.dataSize;
-        rcmIfSendPacket(&request, numBytes);
+        rcmIfSendPacket(&request, sizeof(request));
 
         // wait for response
-        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+        int numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
 
         // did we get a response from the RCM?
         if (numBytes == sizeof(confirm))
         {
             // Handle byte ordering
             confirm.msgType = ntohs(confirm.msgType);
-            confirm.msgId = ntohs(confirm.msgId);
 
             // is this the correct message type?
-            if (confirm.msgType == RCM_SEND_CHANNELIZED_RANGE_REQUEST_CONFIRM)
+            if (confirm.msgType == RCM_SEND_CHANNELIZED_RANGE_REQUEST_CONFIRM && confirm.status == OK)
             {
                 res.result = P4XX_CONFIRMED;
                 ROS_INFO(KGRN "Range + Data request confirmed by P4xx." RESET);
@@ -314,15 +300,14 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
             else
             {
                 res.result = P4XX_CONFIRM_TIMEOUT;
-                ROS_INFO("Returned message: 0x%0x", confirm.msgType);
-                ROS_INFO(KYEL "Range + Data request not confirmed by P4xx." RESET);
+                ROS_INFO(KYEL "Channelized range + data broadcast error. Message Type: 0x%0x, Status: 0x%0x." RESET, confirm.msgType, confirm.status);
             }
 
         }
         else
         {
             res.result = P4XX_CONFIRM_TIMEOUT;
-            ROS_INFO(KYEL "Confirm message not received!" RESET);
+            ROS_INFO(KYEL "Confirm message not properly received." RESET);
         }
 
         break;
@@ -333,8 +318,6 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         rnMsg_SetRequestDataConfirm confirm;
 
         int dataSize = req.data_size;
-
-        int numBytes;
 
         // create request message
         request.msgType = htons(RN_SET_REQUEST_USER_DATA_REQUEST);
@@ -348,7 +331,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         rcmIfSendPacket(&request, sizeof(request));
 
         // wait for response
-        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+        int numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
 
         // did we get a response from the RCM?
         if (numBytes == sizeof(rnMsg_SetRequestDataConfirm))
@@ -358,30 +341,22 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
             confirm.msgId = ntohs(confirm.msgId);
 
             // is this the correct message type?
-            if (confirm.msgType == RN_SET_REQUEST_USER_DATA_CONFIRM)
+            if (confirm.msgType == RN_SET_REQUEST_USER_DATA_CONFIRM && confirm.status == OK)
             {
-                // status code
-                confirm.status = ntohl(confirm.status);
-                // only return OK if status is OK
-                if (confirm.status == OK)
-                {
-                    res.result = P4XX_CONFIRMED;
-                    ROS_INFO(KGRN "Set request data confirmed by P4xx." RESET);
-                }
-                else
-                {
-                    res.result = P4XX_CONFIRM_TIMEOUT;
-                    ROS_INFO("Returned message: %d", confirm.msgType);
-                    ROS_INFO(KYEL "Set request data not confirmed by P4xx." RESET);
-                }
+                res.result = P4XX_CONFIRMED;
+                ROS_INFO(KGRN "Set request data confirmed by P4xx." RESET);
+            }
+            else
+            {
+                res.result = P4XX_CONFIRM_TIMEOUT;
+                ROS_INFO(KYEL "Set request data error. Message Type: 0x%0x, Status: 0x%0x." RESET, confirm.msgType, confirm.status);
             }
         }
         else
         {
             res.result = P4XX_CONFIRM_TIMEOUT;
-            ROS_INFO(KYEL "Confirm message not received!" RESET);
+            ROS_INFO(KYEL "Confirm message not properly received!" RESET);
         }
-
         break;
 
     }
@@ -391,8 +366,6 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         rnMsg_SetResponseDataConfirm confirm;
 
         int dataSize = req.data_size;
-
-        int numBytes;
 
         // create request message
         request.msgType = htons(RN_SET_RESPONSE_USER_DATA_REQUEST);
@@ -406,7 +379,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         rcmIfSendPacket(&request, sizeof(request));
 
         // wait for response
-        numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
+        int numBytes = rcmIfGetPacket(&confirm, sizeof(confirm));
 
         // did we get a response from the RCM?
         if (numBytes == sizeof(rnMsg_SetResponseDataConfirm))
@@ -416,22 +389,15 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
             confirm.msgId = ntohs(confirm.msgId);
 
             // is this the correct message type?
-            if (confirm.msgType == RN_SET_RESPONSE_USER_DATA_CONFIRM)
+            if (confirm.msgType == RN_SET_RESPONSE_USER_DATA_CONFIRM && confirm.status == 0)
             {
-                // status code
-                confirm.status = ntohl(confirm.status);
-                // only return OK if status is OK
-                if (confirm.status == OK)
-                {
-                    res.result = P4XX_CONFIRMED;
-                    ROS_INFO(KGRN "Set response data confirmed by P4xx." RESET);
-                }
-                else
-                {
-                    res.result = P4XX_CONFIRM_TIMEOUT;
-                    ROS_INFO("Returned message: %d", confirm.msgType);
-                    ROS_INFO(KYEL "Set response data not confirmed by P4xx." RESET);
-                }
+                res.result = P4XX_CONFIRMED;
+                ROS_INFO(KGRN "Set response data confirmed by P4xx." RESET);
+            }
+            else
+            {
+                res.result = P4XX_CONFIRM_TIMEOUT;
+                ROS_INFO(KYEL "Set request data error. Message Type: 0x%0x, Status: 0x%0x." RESET, confirm.msgType, confirm.status);
             }
         }
         else
@@ -448,6 +414,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
 
     return true;
 }
+
 /*------------------------------------------------------Function prototypes---------------------------------------------*/
 
 //_____________________________________________________________________________
