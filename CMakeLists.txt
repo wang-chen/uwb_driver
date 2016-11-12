@@ -52,8 +52,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   uwb_range_info.msg
-   uwb_data_info.msg
+   UwbRange.msg
+   UwbData.msg
  )
 
 

@@ -40,8 +40,8 @@
 #include "time.h"
 #include <arpa/inet.h>
 
-#include "uwb_driver/uwb_range_info.h"  //self-defined msg file to inform of a range info package from p4xx
-#include "uwb_driver/uwb_data_info.h"   //self-defined msg file to inform of a data info package from p4xx
+#include "uwb_driver/UwbRange.h"  //self-defined msg file to inform of a range info package from p4xx
+#include "uwb_driver/UwbData.h"   //self-defined msg file to inform of a data info package from p4xx
 
 //Services headers
 #include "uwb_driver/uwbModeConfig.h"   //Mode selection service
@@ -580,8 +580,8 @@ int main(int argc, char *argv[])
         if(publishUwbInfo)
         {
             printf(KBLU "Retrieved value 'true' for param 'publishUwbData'!\n" RESET);
-            uwb_range_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_range_info>("/uwb_range_info", 0);
-            uwb_data_publisher = uwbDriverNodeHandle.advertise<uwb_driver::uwb_data_info>("/uwb_data_info", 0);
+            uwb_range_publisher = uwbDriverNodeHandle.advertise<uwb_driver::UwbRange>("/uwb_range_info", 0);
+            uwb_data_publisher = uwbDriverNodeHandle.advertise<uwb_driver::UwbData>("/uwb_data_info", 0);
         }
 
         else
@@ -848,7 +848,7 @@ int main(int argc, char *argv[])
         {
             if(msg_type == RANGEINFO)
             {
-                uwb_driver::uwb_range_info uwb_range_info_msg;
+                uwb_driver::UwbRange uwb_range_info_msg;
                 uwb_range_info_msg.header = std_msgs::Header();
                 uwb_range_info_msg.header.frame_id = "uwb";
                 uwb_range_info_msg.header.stamp = ros::Time::now();
@@ -886,7 +886,7 @@ int main(int argc, char *argv[])
             }
             else if(msg_type == DATAINFO)
             {
-                uwb_driver::uwb_data_info uwb_data_info_msg;
+                uwb_driver::UwbData uwb_data_info_msg;
                 uwb_data_info_msg.header = std_msgs::Header();
                 uwb_data_info_msg.header.frame_id = "uwb";
                 uwb_data_info_msg.header.stamp = ros::Time::now();
