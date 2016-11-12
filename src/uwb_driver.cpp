@@ -482,6 +482,9 @@ int main(int argc, char *argv[])
     nodesId.insert(nodesId.end(), mobsId.begin(), mobsId.end());
     nodesTotal = nodesId.size();
 
+    //Set the Ids for other referencer
+    uwbDriverNodeHandle.setParam("/uwb/nodesId", nodesId);
+
     //Collect the anchors Positions
     if(uwbDriverNodeHandle.getParam("/uwb/ancsPos", ancsPos))
     {
