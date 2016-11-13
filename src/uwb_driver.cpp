@@ -884,7 +884,7 @@ int main(int argc, char *argv[])
                 uwb_data_info_msg.antenna = dataInfo.antennaId;
                 uwb_data_info_msg.uwb_time = dataInfo.timestamp;
                 uwb_data_info_msg.data_size = dataInfo.dataSize;
-                uwb_data_info_msg.data.insert(uwb_data_info_msg.data.end(), &dataInfo.data[0], &dataInfo.data[dataInfo.dataSize-1]);
+                uwb_data_info_msg.data.insert(uwb_data_info_msg.data.end(), &dataInfo.data[0], &dataInfo.data[dataInfo.dataSize]);
 
                 if(publishUwbInfo)
                     uwb_data_publisher.publish(uwb_data_info_msg);
@@ -895,10 +895,10 @@ int main(int argc, char *argv[])
                        uwb_data_info_msg.antenna,
                        uwb_data_info_msg.source_idx + 1,
                        uwb_data_info_msg.source_id,
-                       dataInfo.dataSize);
-                for(int i = 0; i < dataInfo.dataSize-1; i++)
-                    printf(KGRN "%02x ", dataInfo.data[i]);
-                printf("%02x" RESET, dataInfo.data[dataInfo.dataSize-1]);
+                       uwb_data_info_msg.data_size);
+                for(int i = 0; i < uwb_data_info_msg.data_size-1; i++)
+                    printf(KGRN "%02x ", uwb_data_info_msg.data[i]);
+                printf("%02x" RESET, uwb_data_info_msg.data[uwb_data_info_msg.data_size-1]);
                 printf("}\n");
 
 
