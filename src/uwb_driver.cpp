@@ -823,7 +823,7 @@ int main(int argc, char *argv[])
         }
         if (nodeIndex != -1)
         {
-            if(msg_type == RANGEINFO)
+            if(msg_type == RANGEINFO && rangeInfo.rangeStatus == OK)
             {
                 uwb_driver::UwbRange uwb_range_info_msg;
                 uwb_range_info_msg.header = std_msgs::Header();
