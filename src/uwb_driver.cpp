@@ -490,8 +490,11 @@ int main(int argc, char *argv[])
     {
         if( (ancsPos.size() / (double)ancsTotal) != 3)
         {
-            printf(KRED "anchors positions not whole. Exitting\n" RESET);
-            return 0;
+            if(ancsTotal != 0)
+            {
+                printf(KRED "anchors positions not whole. Exitting\n" RESET);
+                return 0;
+            }
         }
         else
         {
@@ -838,10 +841,18 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.antenna = rangeInfo.antennaMode;
                 uwb_range_info_msg.stopwatch_time = rangeInfo.stopwatchTime;
                 uwb_range_info_msg.uwb_time = rangeInfo.timestamp;
-                uwb_range_info_msg.responder_location.x = ancsPos[nodeIndex*3];
-                uwb_range_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
-                uwb_range_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
-
+                if(nodeIndex >= ancsTotal)
+                {
+                    uwb_range_info_msg.responder_location.x = 1000;
+                    uwb_range_info_msg.responder_location.y = 1000;
+                    uwb_range_info_msg.responder_location.z = 1000;
+                }
+                else
+                {
+                    uwb_range_info_msg.responder_location.x = ancsPos[nodeIndex*3];
+                    uwb_range_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
+                    uwb_range_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
+                }
                 if(publishUwbInfo)
                     uwb_range_publisher.publish(uwb_range_info_msg);
 
