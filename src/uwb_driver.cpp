@@ -110,6 +110,8 @@ uint8_T uwb_msg[RN_USER_DATA_LENGTH];
 // Functions-wide shared variable
 //_____________________________________________________________________________
 static int32_T hostedP4xxId = -1;
+static int32_T hostedP4xxIdx = -1;
+
 int p4xxMode = MODE_RCM;
 
 
@@ -673,7 +675,10 @@ int main(int argc, char *argv[])
 
         for (uint32_T i = 0; i < nodesTotal; i++)
             if(uwbNodeId == nodesId[i])
+            {
                 hostedP4xxId = uwbNodeId;
+                hostedP4xxIdx = i;
+            }
 
         if(hostedP4xxId == -1)
         {
@@ -832,6 +837,8 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.header = std_msgs::Header();
                 uwb_range_info_msg.header.frame_id = "uwb";
                 uwb_range_info_msg.header.stamp = ros::Time::now();
+                uwb_range_info_msg.requester_id = hostedP4xxId;
+                uwb_range_info_msg.requester_idx = hostedP4xxIdx;
                 uwb_range_info_msg.responder_id = nodesId[nodeIndex];
                 uwb_range_info_msg.responder_idx = nodeIndex;
                 uwb_range_info_msg.distance = rangeInfo.precisionRangeMm/1000.0;
@@ -843,9 +850,9 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.uwb_time = rangeInfo.timestamp;
                 if(nodeIndex >= ancsTotal)
                 {
-                    uwb_range_info_msg.responder_location.x = 1000;
-                    uwb_range_info_msg.responder_location.y = 1000;
-                    uwb_range_info_msg.responder_location.z = 1000;
+                    uwb_range_info_msg.responder_location.x = 9999;
+                    uwb_range_info_msg.responder_location.y = 9999;
+                    uwb_range_info_msg.responder_location.z = 9999;
                 }
                 else
                 {
@@ -856,10 +863,12 @@ int main(int argc, char *argv[])
                 if(publishUwbInfo)
                     uwb_range_publisher.publish(uwb_range_info_msg);
 
-                printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
+                printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=%d\tRqIDx=%d\tRqID=%d\tRSIDx=%d\tRSID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
                        uwb_range_info_msg.header.stamp.toSec(),
                        uwb_range_info_msg.uwb_time,
                        uwb_range_info_msg.antenna,
+                       uwb_range_info_msg.requester_idx+1,
+                       uwb_range_info_msg.requester_id,
                        uwb_range_info_msg.responder_idx+1,
                        uwb_range_info_msg.responder_id,
                        uwb_range_info_msg.distance,

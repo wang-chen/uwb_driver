@@ -6,7 +6,7 @@
 
     <!-- configuration for the network -->
 	<!--rosparam param="/uwb/mobsId"> [200, 201, 202, 203, 204, 205, 206, 207, 208, 209]</rosparam-->
-	<!--rosparam param="/uwb/ancsPos"> [1000, 1000, 1000, 1000, 1000, 1000, 1000,  1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]</rosparam-->
+	<!--rosparam param="/uwb/ancsPos"> [9999, 9999, 9999, 9999, 9999, 9999, 9999,  9999, 9999, 9999, 9999, 9999, 9999, 9999, 9999]</rosparam-->
 	<!--rosparam param="/uwb/ancsId"> [100, 101, 102, 103, 104]</rosparam-->
 	<rosparam param="/uwb/mobsId"> [100, 101, 102]</rosparam>
 	<rosparam param="/uwb/ancsPos"> []</rosparam>
