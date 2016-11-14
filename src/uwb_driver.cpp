@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
         if(publishUwbInfo)
         {
             printf(KBLU "Retrieved value 'true' for param 'publishUwbData'!\n" RESET);
-            uwb_range_publisher = uwbDriverNodeHandle.advertise<uwb_driver::UwbRange>("/uwb_range_info", 0);
+            uwb_range_publisher = uwbDriverNodeHandle.advertise<uwb_driver::UwbRange>("/uwb_endorange_info", 0);
             uwb_data_publisher = uwbDriverNodeHandle.advertise<uwb_driver::UwbData>("/uwb_data_info", 0);
         }
 
