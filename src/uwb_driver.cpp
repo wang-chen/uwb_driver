@@ -71,6 +71,8 @@
 
 //localization data
 std::vector<double> ancsPos;
+std::vector<double>mobsPos;
+
 std::vector<double> albega;
 std::vector<int>    ancsId;
 uint8_T ancsTotal = 0;
@@ -513,6 +515,33 @@ int main(int argc, char *argv[])
     }
     else
         printf(KRED "Anchor's location not found!\n" RESET);
+
+    //Collect the mobile Positions
+    if(uwbDriverNodeHandle.getParam("/uwb/mobsPos", mobsPos))
+    {
+        if( (mobsPos.size() / (double)mobsTotal) != 3)
+        {
+            if(mobsTotal != 0)
+            {
+                printf(KRED "mobiles' positions not whole. Exitting\n" RESET);
+                return 0;
+            }
+        }
+        else
+        {
+            printf(KBLU "Retrieved %d mobile cordinates:\n" RESET, mobsTotal);
+
+            for(int i = 0; i < mobsTotal; i++)
+            {
+                printf(KBLU "\tm%d = ", mobsId[i]);
+                for( int j = 0; j < 3; j++)
+                    printf("%4.2f\t", mobsPos[i*3 + j]);
+                printf("\n" RESET);
+            }
+        }
+    }
+    else
+        printf(KRED "Mobiles' location unhinged!\n" RESET);
 
     //check for the mode selected
     if(uwbDriverNodeHandle.getParam("p4xxMode", p4xxMode))
