@@ -70,16 +70,10 @@
 //_____________________________________________________________________________
 
 //localization data
-std::vector<double> ancsPos;
-std::vector<double>mobsPos;
-
 std::vector<double> albega;
-std::vector<int>    ancsId;
-uint8_T ancsTotal = 0;
-std::vector<int>    mobsId;
-uint8_T mobsTotal = 0;
 std::vector<int> nodesId;
 uint8_T nodesTotal = 0;
+std::vector<double>nodesPos;
 
 //_____________________________________________________________________________
 //
@@ -451,113 +445,49 @@ int main(int argc, char *argv[])
         restEnable = true;
     }
 
-    //Collect the mobile node IDs
-    if(uwbDriverNodeHandle.getParam("/uwb/mobsId", mobsId))
+    //Collect the nodes IDs
+    if(uwbDriverNodeHandle.getParam("/uwb/nodesId", nodesId))
     {
-        mobsTotal = mobsId.size();
-        printf(KBLU "Retrieved %d mobile IDs: ", mobsTotal);
-        for(uint32_T i = 0; i < mobsId.size(); i++)
-            printf("%d ", mobsId[i]);
+        nodesTotal = nodesId.size();
+        printf(KBLU "Retrieved %d nodes IDs: ", nodesTotal);
+        for (int i = 0; i < nodesTotal; i++)
+            printf("%d\t", nodesId[i]);
         printf("\n" RESET);
     }
     else
     {
-        printf(KRED "Failed to collect mobile IDs, terminating program!\n" RESET);
+        printf(KRED "Failed to collect nodes IDs, terminating program!\n" RESET);
         return 0;
     }
 
-    //Collect the anchors IDs
-    if(uwbDriverNodeHandle.getParam("/uwb/ancsId", ancsId))
+    //Collect the node Positions
+    if(uwbDriverNodeHandle.getParam("/uwb/nodesPos", nodesPos))
     {
-        ancsTotal = ancsId.size();
-        printf(KBLU "Retrieved %d anchor IDs: ", ancsTotal);
-        for (int i = 0; i < ancsTotal; i++)
-            printf("%d\t", ancsId[i]);
-        printf("\n" RESET);
-    }
-    else
-    {
-        printf(KRED "Failed to collect anchor IDs, terminating program!\n" RESET);
-        return 0;
-    }
-
-    //we should have collected all ids by this point
-    nodesId = ancsId;
-    nodesId.insert(nodesId.end(), mobsId.begin(), mobsId.end());
-    nodesTotal = nodesId.size();
-
-    //Set the Ids for other referencer
-    uwbDriverNodeHandle.setParam("/uwb/nodesId", nodesId);
-
-    //Collect the anchors Positions
-    if(uwbDriverNodeHandle.getParam("/uwb/ancsPos", ancsPos))
-    {
-        if( (ancsPos.size() / (double)ancsTotal) != 3)
+        if( (nodesPos.size() / (double)nodesTotal) != 3)
         {
-            if(ancsTotal != 0)
+            if(nodesTotal != 0)
             {
-                printf(KRED "anchors positions not whole. Exitting\n" RESET);
+                printf(KRED "Nodes locations not whole. Exitting\n" RESET);
                 return 0;
             }
         }
         else
         {
-            printf(KBLU "Retrieved %d anchor cordinates:\n" RESET, ancsTotal);
+            printf(KBLU "Retrieved %d pre-defined cordinates:\n" RESET, nodesTotal);
 
-            for(int i = 0; i < ancsTotal; i++)
+            for(int i = 0; i < nodesTotal; i++)
             {
-                printf(KBLU "\ta%d = ", ancsId[i]);
+                printf(KBLU "\ta%d = ", nodesId[i]);
                 for( int j = 0; j < 3; j++)
-                    printf("%4.2f\t", ancsPos[i*3 + j]);
+                    printf("%4.2f\t", nodesPos[i*3 + j]);
                 printf("\n" RESET);
             }
         }
     }
     else
-        printf(KRED "Anchor's location not found!\n" RESET);
-
-    //Collect the mobile Positions
-    if(uwbDriverNodeHandle.getParam("/uwb/mobsPos", mobsPos))
     {
-        if( (mobsPos.size() / (double)mobsTotal) != 3)
-        {
-            if(mobsTotal != 0)
-            {
-                printf(KRED "mobiles' positions not whole. Exitting\n" RESET);
-                return 0;
-            }
-        }
-        else
-        {
-            printf(KBLU "Retrieved %d mobile cordinates:\n" RESET, mobsTotal);
-
-            for(int i = 0; i < mobsTotal; i++)
-            {
-                printf(KBLU "\tm%d = ", mobsId[i]);
-                for( int j = 0; j < 3; j++)
-                    printf("%4.2f\t", mobsPos[i*3 + j]);
-                printf("\n" RESET);
-            }
-        }
-    }
-    else
-        printf(KRED "Mobiles' location unhinged!\n" RESET);
-
-    //check for the mode selected
-    if(uwbDriverNodeHandle.getParam("p4xxMode", p4xxMode))
-        switch((char)p4xxMode)
-        {
-        case 0:
-            printf(KBLU "RCM p4xxMode selected.\n" RESET);
-            break;
-        default:
-            printf(KBLU "RN p4xxMode selected.\n" RESET);
-            break;
-        }
-    else
-    {
-        printf(KRED "Failed to select uwb operating mode, terminating program!\n" RESET);
-        return 0;
+        printf(KRED "Nodes location not specified!\n" RESET);
+        exit(0);
     }
 
     //Redundant
@@ -824,6 +754,14 @@ int main(int argc, char *argv[])
     while(ros::ok())
     {
         ros::spinOnce();
+        std::vector<double> nodesPosUpd;
+
+        //Check if the positions have been updated
+        if(uwbDriverNodeHandle.getParam("/uwb/nodesPosUpd", nodesPosUpd))
+        {
+            if(nodesPosUpd.size() == nodesPos.size())
+                nodesPos = nodesPosUpd;
+        }
         uint8_T msg_type = -1;
         //Check and find the coresponding index of the update
         int nodeIndex = -1;
@@ -877,18 +815,10 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.antenna = rangeInfo.antennaMode;
                 uwb_range_info_msg.stopwatch_time = rangeInfo.stopwatchTime;
                 uwb_range_info_msg.uwb_time = rangeInfo.timestamp;
-                if(nodeIndex >= ancsTotal)
-                {
-                    uwb_range_info_msg.responder_location.x = 9999;
-                    uwb_range_info_msg.responder_location.y = 9999;
-                    uwb_range_info_msg.responder_location.z = 9999;
-                }
-                else
-                {
-                    uwb_range_info_msg.responder_location.x = ancsPos[nodeIndex*3];
-                    uwb_range_info_msg.responder_location.y = ancsPos[nodeIndex*3+1];
-                    uwb_range_info_msg.responder_location.z = ancsPos[nodeIndex*3+2];
-                }
+                uwb_range_info_msg.responder_location.x = nodesPos[nodeIndex*3];
+                uwb_range_info_msg.responder_location.y = nodesPos[nodeIndex*3+1];
+                uwb_range_info_msg.responder_location.z = nodesPos[nodeIndex*3+2];
+
                 if(publishUwbInfo)
                     uwb_range_publisher.publish(uwb_range_info_msg);
 
