@@ -70,7 +70,6 @@
 //_____________________________________________________________________________
 
 //localization data
-std::vector<double> albega;
 std::vector<int> nodesId;
 uint8_T nodesTotal = 0;
 std::vector<double>nodesPos;

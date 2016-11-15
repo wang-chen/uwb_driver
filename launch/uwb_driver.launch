@@ -7,7 +7,6 @@
     <!-- configuration for the network -->
 	<rosparam param="/uwb/nodesId"> [100, 101, 102]</rosparam>
 	<rosparam param="/uwb/nodesPos"> [0, 0, 0, 9999, 0, 0, 9999, 9999, 0]</rosparam>
-	<rosparam param="/uwb/albega"> [1.001966856066302, 0.108814649293333, 200]</rosparam> <!-- calibration values for the p4xx -->
 	
   <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
             <!-- configuration for the node -->
