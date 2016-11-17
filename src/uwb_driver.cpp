@@ -758,7 +758,7 @@ int main(int argc, char *argv[])
 
     ros::Duration sleepTime = ros::Duration(1.0/p4xxQueryRate);
     //get the initial position by trilaterating the average
-    while(ros::ok() && !slumberTime)
+    while(ros::ok())
     {
         ros::spinOnce();
         std::vector<double> nodesPosUpd;
@@ -878,6 +878,12 @@ int main(int argc, char *argv[])
 
 
             }
+        }
+
+        if(slumberTime)
+        {
+            ros::Duration oneMonthTime(2592000);
+            oneMonthTime.sleep();
         }
 
         if(restEnable)
