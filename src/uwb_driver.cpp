@@ -85,6 +85,7 @@ std::vector<double>nodesPos;
 
 #define     MODE_RCM                0
 #define     MODE_RN                 1
+#define     MODE_SLUMBER            2
 
 extern int msgIdCount;
 
@@ -108,13 +109,20 @@ static int32_T hostedP4xxId = -1;
 static int32_T hostedP4xxIdx = -1;
 
 int p4xxMode = MODE_RCM;
-
+bool slumberTime = false;
 
 /*------------------------------------------------------Function prototypes---------------------------------------------*/
 bool uwb_mode_config(uwb_driver::uwbModeConfig::Request &req, uwb_driver::uwbModeConfig::Response &res)
 {
     ros::Time startTime = ros::Time::now();
     int success = -1;
+
+    //If mode is 2 we have to close the node
+    if(p4xxMode == MODE_SLUMBER)
+    {
+        slumberTime = true;
+        return true;
+    }
 
     // Set the mode with 1 second time out
     while(ros::ok() && (ros::Time::now() - startTime).toSec() < 2)
@@ -750,7 +758,7 @@ int main(int argc, char *argv[])
 
     ros::Duration sleepTime = ros::Duration(1.0/p4xxQueryRate);
     //get the initial position by trilaterating the average
-    while(ros::ok())
+    while(ros::ok() && !slumberTime)
     {
         ros::spinOnce();
         std::vector<double> nodesPosUpd;
@@ -876,7 +884,7 @@ int main(int argc, char *argv[])
             sleepTime.sleep();
     }
 
-    //Attempt to set the device to RCM
-    rcmOpModeSet(RCRM_OPMODE_RCM);
+    //Prepare your sleep here
+
     rcmIfClose();
 }
