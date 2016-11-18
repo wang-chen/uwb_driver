@@ -118,7 +118,7 @@ bool uwb_mode_config(uwb_driver::uwbModeConfig::Request &req, uwb_driver::uwbMod
     int success = -1;
 
     //If mode is 2 we have to close the node
-    if(p4xxMode == MODE_SLUMBER)
+    if(req.p4xxmode == MODE_SLUMBER)
     {
         slumberTime = true;
         return true;
