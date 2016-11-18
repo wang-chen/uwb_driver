@@ -882,6 +882,7 @@ int main(int argc, char *argv[])
 
         if(slumberTime)
         {
+            rcmIfClose();
             ros::Duration oneMonthTime(2592000);
             oneMonthTime.sleep();
         }
@@ -889,8 +890,4 @@ int main(int argc, char *argv[])
         if(restEnable)
             sleepTime.sleep();
     }
-
-    //Prepare your sleep here
-
-    rcmIfClose();
 }
