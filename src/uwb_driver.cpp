@@ -890,4 +890,5 @@ int main(int argc, char *argv[])
         if(restEnable)
             sleepTime.sleep();
     }
+    rcmIfClose();
 }
