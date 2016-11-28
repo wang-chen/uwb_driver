@@ -571,6 +571,30 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    if(uwbDriverNodeHandle.getParam("p4xxMode", p4xxMode))
+    {
+        switch(p4xxMode)
+        {
+        case MODE_RCM:
+            printf(KBLU "Started with RCM mode %\n" RESET);
+            break;
+        case MODE_RN:
+            printf(KBLU "Started with RN mode %\n" RESET);
+            break;
+        default:
+            printf(KYEL "Not RCM or RN specific! Default is RCM.\n" RESET);
+            p4xxMode = MODE_RCM;
+            break;
+            break;
+        }
+
+    }
+    else
+    {
+        printf(KYEL "Couldn't retrieve param 'p4xxMode'. Started with default mode RCM!\n" RESET);
+        p4xxMode = MODE_RCM;
+    }
+
     bool autoConfigRn = true;
     if(uwbDriverNodeHandle.getParam("autoConfigRn", autoConfigRn))
         if(autoConfigRn)
