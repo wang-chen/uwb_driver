@@ -571,6 +571,30 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    if(uwbDriverNodeHandle.getParam("p4xxMode", p4xxMode))
+    {
+        switch(p4xxMode)
+        {
+        case MODE_RCM:
+            printf(KBLU "Started with RCM mode %\n" RESET);
+            break;
+        case MODE_RN:
+            printf(KBLU "Started with RN mode %\n" RESET);
+            break;
+        default:
+            printf(KYEL "Not RCM or RN specific! Default is RCM.\n" RESET);
+            p4xxMode = MODE_RCM;
+            break;
+            break;
+        }
+
+    }
+    else
+    {
+        printf(KYEL "Couldn't retrieve param 'p4xxMode'. Started with default mode RCM!\n" RESET);
+        p4xxMode = MODE_RCM;
+    }
+
     bool autoConfigRn = true;
     if(uwbDriverNodeHandle.getParam("autoConfigRn", autoConfigRn))
         if(autoConfigRn)
@@ -829,7 +853,7 @@ int main(int argc, char *argv[])
                 if(publishUwbInfo)
                     uwb_range_publisher.publish(uwb_range_info_msg);
 
-                printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=%d\tRqIDx=%d\tRqID=%d\tRSIDx=%d\tRSID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
+                printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=0x%02x\tRqIDx=%d\tRqID=%d\tRSIDx=%d\tRSID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
                        uwb_range_info_msg.header.stamp.toSec(),
                        uwb_range_info_msg.uwb_time,
                        uwb_range_info_msg.antenna,
@@ -864,7 +888,7 @@ int main(int argc, char *argv[])
                 if(publishUwbInfo)
                     uwb_data_publisher.publish(uwb_data_info_msg);
 
-                printf("DATAINFO: Time=%.4f\ttu = %zu\tant=%d\tIndex=%d\tID=%d\tData bytes: %d\t{",
+                printf("DATAINFO: Time=%.4f\ttu = %zu\tant=0x%02x\tIndex=%d\tID=%d\tData bytes: %d\t{",
                        uwb_data_info_msg.header.stamp.toSec(),
                        uwb_data_info_msg.uwb_time,
                        uwb_data_info_msg.antenna,
@@ -890,4 +914,5 @@ int main(int argc, char *argv[])
         if(restEnable)
             sleepTime.sleep();
     }
+    rcmIfClose();
 }
