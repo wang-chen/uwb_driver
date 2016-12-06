@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+    <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 206]</rosparam>
+    <rosparam param="/uwb/nodesPos">[-3, -3, 0, -3, 3, 0.2, 3, 3, 1.2, 3, -3, 1.5]</rosparam>
+
+    <node name="uwb_driver_play" pkg="rosbag" type="play" output="screen" args="$(find uwb_driver)/bag/uwb_driver_gazebo.bag"/>
+  
+</launch>
+
