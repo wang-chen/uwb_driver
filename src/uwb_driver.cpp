@@ -109,6 +109,8 @@ static int32_T hostedP4xxId = -1;
 static int32_T hostedP4xxIdx = -1;
 
 int p4xxMode = MODE_RCM;
+int p4xxPii = -1;
+int p4xxChannel = -1;
 bool slumberTime = false;
 
 /*------------------------------------------------------Function prototypes---------------------------------------------*/
@@ -595,6 +597,38 @@ int main(int argc, char *argv[])
         p4xxMode = MODE_RCM;
     }
 
+    if(uwbDriverNodeHandle.getParam("p4xxPii", p4xxPii))
+    {
+        if(p4xxPii >= 4 && p4xxPii <= 9)
+            printf(KBLU "Retrieved valid pii value: %d.\n" RESET, p4xxPii);
+        else
+        {
+            printf(KBLU "Retrieved invalid pii value: %d.\n" RESET, p4xxPii);
+            p4xxPii = -1;
+        }
+    }
+    else
+    {
+        printf(KYEL "Couldn't retrieve param 'p4xxPii'. -1 by default!\n" RESET);
+        p4xxPii = -1;
+    }
+
+    if(uwbDriverNodeHandle.getParam("p4xxChannel", p4xxChannel))
+    {
+        if(p4xxChannel >= 0 && p4xxChannel <= 10)
+            printf(KBLU "Retrieved valid Channel value: %d.\n" RESET, p4xxChannel);
+        else
+        {
+            printf(KBLU "Retrieved invalid Channel value: %d.\n" RESET, p4xxChannel);
+            p4xxChannel = -1;
+        }
+    }
+    else
+    {
+        printf(KYEL "Couldn't retrieve param 'p4xxChannel'. -1 by default!\n" RESET);
+        p4xxChannel = -1;
+    }
+
     bool autoConfigRn = true;
     if(uwbDriverNodeHandle.getParam("autoConfigRn", autoConfigRn))
         if(autoConfigRn)
@@ -680,6 +714,25 @@ int main(int argc, char *argv[])
             printf(KBLU "Device ID: %d\n" RESET, rcmConfig.nodeId);
             uwbDriverNodeHandle.setParam("/uwb/hostedP4xxId", uwbNodeId);
         }
+
+        //Send back the modified configuration.
+        bool shouldSetConfig = false;
+        if(shouldSetConfig = (p4xxPii >=4 && p4xxPii <=9 && rcmConfig.integrationIndex != p4xxPii))
+            rcmConfig.integrationIndex = p4xxPii;
+
+        if(shouldSetConfig = (p4xxChannel >= 0 && p4xxChannel <= 10 && rcmConfig.integrationIndex != p4xxChannel))
+            rcmConfig.integrationIndex = p4xxChannel;
+
+        if(shouldSetConfig)
+        {
+            if(rcmConfigSet(&rcmConfig) != 0)
+            {
+                printf("Failed to configure device, exiting!");
+                exit(0);
+            }
+        }
+
+
     }
 
     //initialize P4xx serial interface

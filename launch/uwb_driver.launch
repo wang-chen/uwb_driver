@@ -20,7 +20,9 @@
 	<param name="p4xxInterfaceChoice" type="int" value="1"/>
 	<param name="p4xxSerialPort" type="string" value="100" />
 	<param name="p4xxMode" type="int" value="0" />
-	<param name="autoConfigRn" type="bool" value="false" />	
+	<param name="p4xxPii" type="int" value="-1" />			<!-- (<4 || >9) is inherit (no attempt to change) -->
+	<param name="p4xxChan" type="int" value="-1" />			<!-- (<0 && >10) is inherit (no attempt to change) -->
+	<param name="autoConfigRn" type="bool" value="false" />
 
   </node>
   
