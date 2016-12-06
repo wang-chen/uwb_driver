@@ -149,14 +149,22 @@ SET(UWB_SRCS
 ## Declare a C++ executable
 add_executable(uwb_driver_node src/uwb_driver.cpp ${UWB_SRCS})
 
+add_executable(uwb_driver_gazebo_node src/uwb_driver_gazebo.cpp)
+
+
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(uwb_driver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(uwb_driver_gazebo_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(uwb_driver_node
-   ${catkin_LIBRARIES}
- )
+target_link_libraries(uwb_driver_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(uwb_driver_gazebo_node
+  ${catkin_LIBRARIES}
+)
 
 #target_link_libraries(uwb_driver_sim_node
 #  ${catkin_LIBRARIES}
