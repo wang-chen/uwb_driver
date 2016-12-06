@@ -9,7 +9,7 @@ int node_num;// = nodesPos.size()/3;
 int count = 0;
 std::random_device rd;
 std::mt19937 gen(rd());
-std::normal_distribution<> d(0,0.05);
+std::normal_distribution<> d(0,0.02);
 
 void gazeboCallback(const geometry_msgs::PoseStamped pose)
 {
@@ -21,13 +21,13 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     uwb_driver::UwbRange msg;
     msg.header = std_msgs::Header();
     msg.header.frame_id = "uwb";
-    msg.header.stamp = ros::Time::now();
+    msg.header.stamp = pose.header.stamp;
     msg.requester_id  = nodesId.back();
     msg.requester_idx =  nodesId.back()%100;
     msg.responder_id  = nodesId[count];
     msg.responder_idx = nodesId[count]%100;
     msg.distance = distance + d(gen);
-    msg.distance_err = 0.05;
+    msg.distance_err = 0.02;
     msg.responder_location.x = nodesPos[count*3];
     msg.responder_location.y = nodesPos[count*3+1];
     msg.responder_location.z = nodesPos[count*3+2];
