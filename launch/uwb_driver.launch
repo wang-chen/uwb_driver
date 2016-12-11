@@ -2,9 +2,9 @@
 <launch>
     <!-- configuration for the network -->
     <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 204]</rosparam>
-    <rosparam param="/uwb/nodesPos"> [3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 9999, 9999, 9999]</rosparam>
+    <rosparam param="/uwb/nodesPos"> [3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]</rosparam>
     
-    <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0">
+    <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
         <!-- configuration for the node -->
         <param name="p4xxQueryRate" type="int" value="20"/>
         <param name="reportRate" type="int" value="20"/>
