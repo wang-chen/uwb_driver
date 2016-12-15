@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         for(auto it:nodesPos)
             ROS_WARN("Get node position: %4.2f", it);
 
-    ros::Subscriber sub = n.subscribe("/ground_truth_to_tf/pose", 1000, gazeboCallback);
+    ros::Subscriber sub = n.subscribe("/ground_truth/pose", 1000, gazeboCallback);
 
     uwb_pub = n.advertise<uwb_driver::UwbRange>("/uwb_endorange_info", 0);
     
