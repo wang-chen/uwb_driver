@@ -5,7 +5,7 @@
 ros::Publisher uwb_pub;
 std::vector<int> nodesId;
 std::vector<double> nodesPos;
-int node_num;// = nodesPos.size()/3;
+int node_num;
 int count = 0;
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -49,11 +49,11 @@ int main(int argc, char **argv)
         for(auto it:nodesPos)
             ROS_WARN("Get node position: %4.2f", it);
 
-    ros::Subscriber sub = n.subscribe("/ground_truth_to_tf/pose", 1000, gazeboCallback);
+    ros::Subscriber sub = n.subscribe("/ground_truth/pose", 1000, gazeboCallback);
 
     uwb_pub = n.advertise<uwb_driver::UwbRange>("/uwb_endorange_info", 0);
     
-    node_num = nodesPos.size()/3;
+    node_num = nodesId.size() - 1;
     
     ROS_WARN("Publishing..");
 

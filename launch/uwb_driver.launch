@@ -1,28 +1,22 @@
 <?xml version="1.0"?>
-
 <launch>
-
- <!-- uwb driver node -->
-
     <!-- configuration for the network -->
-	<rosparam param="/uwb/nodesId"> [100, 101, 102, 103]</rosparam>
-	<rosparam param="/uwb/nodesPos"> [0, 0, 0, 9999, 0, 0, 9999, 9999, 0, 9999, 9999, -9999]</rosparam>
-	
-  <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0">
-            <!-- configuration for the node -->
-	<param name="p4xxQueryRate" type="int" value="20"/>
-	<param name="reportRate" type="int" value="20"/>
-	<param name="restEnable" type="bool" value="true"/>
-	<param name="ignrTimeoutUwbInit" type="bool" value="true"/>
-	<param name="publishUwbInfo" type="bool" value="true"/>
+    <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 204]</rosparam>
+    <rosparam param="/uwb/nodesPos"> [3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]</rosparam>
+    
+    <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
+        <!-- configuration for the node -->
+        <param name="p4xxQueryRate" type="int" value="20"/>
+        <param name="reportRate" type="int" value="20"/>
+        <param name="restEnable" type="bool" value="false"/>
+        <param name="ignrTimeoutUwbInit" type="bool" value="true"/>
+        <param name="publishUwbInfo" type="bool" value="true"/>
 
-            <!-- configuration for the p4xx -->
-	<param name="p4xxInterfaceChoice" type="int" value="1"/>
-	<param name="p4xxSerialPort" type="string" value="100" />
-	<param name="p4xxMode" type="int" value="0" />
-	<param name="autoConfigRn" type="bool" value="false" />	
-
-  </node>
+        <!-- configuration for the p4xx -->
+        <param name="p4xxInterfaceChoice" type="int" value="1"/>
+        <param name="p4xxSerialPort" type="string" value="204" />
+        <param name="p4xxMode" type="int" value="1" />
+        <param name="autoConfigRn" type="bool" value="false" /> 
+    </node>
   
 </launch>
-
