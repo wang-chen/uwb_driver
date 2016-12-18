@@ -840,7 +840,7 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.responder_id = nodesId[nodeIndex];
                 uwb_range_info_msg.responder_idx = nodeIndex;
                 uwb_range_info_msg.distance = rangeInfo.precisionRangeMm/1000.0;
-                uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000;
+                uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000.0;
                 uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
                 uwb_range_info_msg.distance_dot_err = rangeInfo.filteredRangeVel/1000.0;
                 uwb_range_info_msg.antenna = rangeInfo.antennaMode;
