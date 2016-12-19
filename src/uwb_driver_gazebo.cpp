@@ -33,6 +33,8 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     msg.responder_location.z = nodesPos[count*3+2];
     uwb_pub.publish(msg);
     count = (count+1)%node_num;
+
+    ros::Duration(0.0666).sleep();
 }
 
 int main(int argc, char **argv)
@@ -49,7 +51,7 @@ int main(int argc, char **argv)
         for(auto it:nodesPos)
             ROS_WARN("Get node position: %4.2f", it);
 
-    ros::Subscriber sub = n.subscribe("/ground_truth/pose", 1000, gazeboCallback);
+    ros::Subscriber sub = n.subscribe("/ground_truth/pose", 1, gazeboCallback);
 
     uwb_pub = n.advertise<uwb_driver::UwbRange>("/uwb_endorange_info", 0);
     
