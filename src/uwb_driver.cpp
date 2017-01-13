@@ -839,6 +839,10 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.requester_idx = hostedP4xxIdx;
                 uwb_range_info_msg.responder_id = nodesId[nodeIndex];
                 uwb_range_info_msg.responder_idx = nodeIndex;
+                uwb_range_info_msg.requester_LED_flag = rangeInfo.reqLEDFlags;
+                uwb_range_info_msg.responder_LED_flag = rangeInfo.respLEDFlags;
+                uwb_range_info_msg.noise = rangeInfo.noise;
+                uwb_range_info_msg.vPeak = rangeInfo.vPeak;
                 uwb_range_info_msg.distance = rangeInfo.precisionRangeMm/1000.0;
                 uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000.0;
                 uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
@@ -853,7 +857,7 @@ int main(int argc, char *argv[])
                 if(publishUwbInfo)
                     uwb_range_publisher.publish(uwb_range_info_msg);
 
-                printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=0x%02x\tRqIDx=%d\tRqID=%d\tRSIDx=%d\tRSID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
+                printf("RANGEINFO:Time=%.4f\ttu = %zu\tant=%02x\tRqIDx=%d\tRqID=%d\tRSIDx=%d\tRSID=%d\td=%6.3f, de = %6.3f, dd = %6.3f, dde = %6.3f\trqLED = %02x\trsLED = %02x\tnoise = %d\tVp = %d\tsw=%d\tx=%6.2f\ty=%6.2f\tz=%6.2f\n",
                        uwb_range_info_msg.header.stamp.toSec(),
                        uwb_range_info_msg.uwb_time,
                        uwb_range_info_msg.antenna,
@@ -865,6 +869,10 @@ int main(int argc, char *argv[])
                        uwb_range_info_msg.distance_err,
                        uwb_range_info_msg.distance_dot,
                        uwb_range_info_msg.distance_dot_err,
+                       uwb_range_info_msg.requester_LED_flag,
+                       uwb_range_info_msg.responder_LED_flag,
+                       uwb_range_info_msg.noise,
+                       uwb_range_info_msg.vPeak,
                        uwb_range_info_msg.stopwatch_time,
                        uwb_range_info_msg.responder_location.x,
                        uwb_range_info_msg.responder_location.y,

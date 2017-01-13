@@ -3,6 +3,10 @@ uint8 requester_id
 uint8 requester_idx
 uint8 responder_id				            # Identity number of the responding P4xx
 uint8 responder_idx				            # Index number of the node in the responding array passed by rosparam
+uint16 requester_LED_flag                                   # requester’s received scan: 16 for NLS
+uint16 responder_LED_flag                                   # responder's received scan: 16 for NLS
+uint16 noise                                                # noise
+uint16 vPeak                                                # absolute maximum value in the leading edge window of the received waveform
 float32 distance				            # Distance measurement
 float32 distance_err                                        # Error estimated by P4xx
 float32 distance_dot                                        # Range velocity estimated by Pxx
