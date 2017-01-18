@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
     <!-- configuration for the network -->
-    <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 204]</rosparam>
-    <rosparam param="/uwb/nodesPos"> [3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]</rosparam>
+    <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 201]</rosparam>
+    <!-- <rosparam param="/uwb/nodesPos"> [3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]</rosparam> -->
+    <rosparam param="/uwb/nodesPos"> [3, -3, 0.75, 3, 3, 1.95, -3, 3, 0.5, -3, -3, 1.7, 0, 0, 1.0]</rosparam>
     
     <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
         <!-- configuration for the node -->
@@ -14,7 +15,7 @@
 
         <!-- configuration for the p4xx -->
         <param name="p4xxInterfaceChoice" type="int" value="1"/>
-        <param name="p4xxSerialPort" type="string" value="204" />
+        <param name="p4xxSerialPort" type="string" value="201" />
         <param name="p4xxMode" type="int" value="1" />
         <param name="autoConfigRn" type="bool" value="false" /> 
     </node>
