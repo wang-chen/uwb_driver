@@ -4,9 +4,9 @@
 
     <include file="$(find uwb_driver)/launch/uwb_driver.launch"/>
 
-    <include file="$(find viconxbee)/launch/viconxbee.launch"/>
+    <include file="$(find vicon_xb)/launch/vicon_xb.launch"/>
 
-    <node name="uwb_driver_record" pkg="rosbag" type="record" args="-o $(find uwb_driver)/bag/uwb_driver /uwb_data_info /uwb_endorange_info /viconxbee_node/mocap/imu /viconxbee_node/mocap/pose /viconxbee_node/viconPoseTopic"/>
+    <node name="uwb_driver_record" pkg="rosbag" type="record" args="-o $(find uwb_driver)/bag/uwb_driver /uwb_data_info /uwb_endorange_info /vicon_xb_node/mocap/imu /vicon_xb_node/mocap/pose /vicon_xb_node/viconPoseTopic"/>
   
 </launch>
 
