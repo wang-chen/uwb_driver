@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
 <launch>
     <!-- configuration for the network -->
-    <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 201]</rosparam>
-    <!-- <rosparam param="/uwb/nodesPos"> [3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]</rosparam> -->
-    <rosparam param="/uwb/nodesPos"> [3, -3, 0.75, 3, 3, 1.95, -3, 3, 0.5, -3, -3, 1.7, 0, 0, 1.0]</rosparam>
+
+    <rosparam file="$(find uwb_driver)/cfg/anchor.yaml" command="load" />
     
     <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
         <!-- configuration for the node -->
