@@ -14,7 +14,7 @@
 
         <!-- configuration for the p4xx -->
         <param name="p4xxInterfaceChoice" type="int" value="1"/>
-        <param name="p4xxSerialPort" type="string" value="201" />
+        <param name="p4xxSerialPort" type="string" value="104" />
         <param name="p4xxMode" type="int" value="1" />
         <param name="autoConfigRn" type="bool" value="false" /> 
     </node>
