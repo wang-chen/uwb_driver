@@ -1,0 +1,5 @@
+uwb:
+
+# UWB's Anchor Configuration Parameters
+  nodesId: [100, 101, 102, 103, 204]
+  nodesPos: [3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]

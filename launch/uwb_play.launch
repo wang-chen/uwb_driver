@@ -3,8 +3,7 @@
 
 	<param name="use_sim_time" value="true" />
 
-    <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 204]</rosparam>
-    <rosparam param="/uwb/nodesPos">[3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]</rosparam>
+    <rosparam file="$(find uwb_driver)/cfg/anchor_old.yaml" command="load" />
 
     <node name="uwb_driver_play" pkg="rosbag" type="play" output="screen" args="-s 10 -l $(find uwb_driver)/bag/uwb_driver_square.bag"/>
 

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
 
-    <rosparam param="/uwb/nodesId"> [100, 101, 102, 103, 204]</rosparam>
-    <rosparam param="/uwb/nodesPos">[3, 3, 0.65, 3, -3, 0.25, -3, -3, 0.25, -3, 3, 0.25, 0, 0, 1.0]</rosparam>
+    <rosparam file="$(find uwb_driver)/cfg/anchor_old.yaml" command="load" />
+
 
     <include file="$(find hector_quadrotor_demo)/launch/outdoor_flight_gazebo.launch"/>
     <include file="$(find hector_quadrotor_teleop)/launch/xbox_controller.launch"/>
