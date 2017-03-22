@@ -12,6 +12,7 @@ std::vector<int> nodesId;
 std::vector<double> nodesPos;
 int node_num;
 int count = 0;
+int count_antenna = 0;
 std::random_device rd;
 std::mt19937 gen(rd());
 std::normal_distribution<> d(0,0.02);
@@ -30,17 +31,18 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
 
     Eigen::Affine3d pose_eigen;
     poseMsgToEigen(pose.pose, pose_eigen);
-    if (count%2)
+    if (count_antenna%2)
     {
         msg.antenna = 0;
         pose_eigen = pose_eigen * offset_left;
+        count = (count+1)%node_num;
     }
     else
     {
         msg.antenna = 255;
         pose_eigen = pose_eigen * offset_right;
     }
-
+    count_antenna = count_antenna+1;
 
 
     double distance = sqrt(
@@ -55,7 +57,7 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     msg.responder_location.y = nodesPos[count*3+1];
     msg.responder_location.z = nodesPos[count*3+2];
     uwb_pub.publish(msg);
-    count = (count+1)%node_num;
+    
 
     ros::Duration(0.0666).sleep();
 }
