@@ -13,7 +13,9 @@ using namespace tf;
 ros::Publisher uwb_pub;
 std::vector<int> nodesId;
 std::vector<double> nodesPos;
+std::vector<double> antennaOffset;
 int node_num;
+int antenna_num;
 int count = 0;
 int count_antenna = 0;
 std::random_device rd;
@@ -89,6 +91,13 @@ int main(int argc, char **argv)
         for(auto it:nodesPos)
             ROS_WARN("Get node position: %4.2f", it);
 
+    if(n.getParam("/uwb/antennaOffset", antennaOffset))
+        for(auto it:antennaOffset)
+            ROS_WARN("Get antenna Offset: %4.2f", it);
+
+    antenna_num = antennaOffset.size()/3;
+    ROS_WARN("Using %d antennas", antenna_num);
+
     ros::Subscriber sub = n.subscribe("/ground_truth_to_tf/pose", 1, gazeboCallback);
 
     uwb_pub = n.advertise<uwb_driver::UwbRange>("/uwb_endorange_info", 0);
@@ -99,8 +108,8 @@ int main(int argc, char **argv)
 
     offset_left.setIdentity();
     offset_right.setIdentity();
-    offset_left.translate(Vector3d(-1, 0, 0));
-    offset_right.translate(Vector3d(1, 0, 0));
+    offset_left.translate(Vector3d(1, 0, 0));
+    offset_right.translate(Vector3d(-1, 0, 0));
     // cout<<offset_right<<" "<<offset_left<<endl;
 
     ros::spin();
