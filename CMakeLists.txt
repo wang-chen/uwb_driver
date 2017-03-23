@@ -15,7 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   serial
   geometry_msgs
+  tf
   eigen_conversions
+  tf_conversions
 )
 
 

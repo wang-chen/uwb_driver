@@ -1,14 +1,12 @@
 <?xml version="1.0"?>
 <launch>
 
-    <rosparam file="$(find uwb_driver)/cfg/anchor_old.yaml" command="load" />
+    <rosparam file="$(find uwb_driver)/cfg/anchor.yaml" command="load" />
 
 
     <include file="$(find hector_quadrotor_demo)/launch/outdoor_flight_gazebo.launch"/>
     <include file="$(find hector_quadrotor_teleop)/launch/xbox_controller.launch"/>
     
-    <node respawn="false" pkg="uwb_driver" type="uwb_driver_gazebo_node" name="uwb_driver_gazebo_node" output="screen">
-		<remap from="/ground_truth/pose" to="/ground_truth_to_tf/pose"/>
-    </node>
+    <!-- <node respawn="false" pkg="uwb_driver" type="uwb_driver_gazebo_node" name="uwb_driver_gazebo_node" output="screen"/> -->
   
 </launch>
