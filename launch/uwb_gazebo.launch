@@ -3,10 +3,9 @@
 
     <rosparam file="$(find uwb_driver)/cfg/anchor.yaml" command="load" />
 
-
     <include file="$(find hector_quadrotor_demo)/launch/outdoor_flight_gazebo.launch"/>
     <include file="$(find hector_quadrotor_teleop)/launch/xbox_controller.launch"/>
     
-    <!-- <node respawn="false" pkg="uwb_driver" type="uwb_driver_gazebo_node" name="uwb_driver_gazebo_node" output="screen"/> -->
+    <node respawn="false" pkg="uwb_driver" type="uwb_driver_gazebo_node" name="uwb_driver_gazebo_node" output="screen"/>
   
 </launch>

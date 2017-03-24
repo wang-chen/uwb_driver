@@ -21,7 +21,6 @@ int count_antenna = 0;
 std::random_device rd;
 std::mt19937 gen(rd());
 std::normal_distribution<> d(0,0.02);
-Eigen::Affine3d offset_left, offset_right;
 
 void gazeboCallback(const geometry_msgs::PoseStamped pose)
 {
@@ -76,7 +75,7 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     msg.responder_location.z = nodesPos[count*3+2];
     uwb_pub.publish(msg);
 
-    if (count_antenna%antenna_num == 0)
+    if (antenna_num==0 || count_antenna%antenna_num == 0)
         count = (count+1)%node_num;
 
     ros::Duration(0.025).sleep();
@@ -110,11 +109,6 @@ int main(int argc, char **argv)
     node_num = nodesId.size() - 1;
     
     ROS_WARN("Publishing..");
-
-    offset_left.setIdentity();
-    offset_right.setIdentity();
-    offset_left.translate(Vector3d(1, 0, 0));
-    offset_right.translate(Vector3d(-1, 0, 0));
 
     ros::spin();
 
