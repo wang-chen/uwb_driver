@@ -30,7 +30,7 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     msg.header.frame_id = "uwb";
     msg.header.stamp = pose.header.stamp;
     msg.requester_id  = nodesId.back();
-    msg.requester_idx =  nodesId.back()%100;
+    msg.requester_idx = nodesId.back()%100;
     msg.responder_id  = nodesId[count];
     msg.responder_idx = nodesId[count]%100;
 
@@ -39,20 +39,26 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     static tf::TransformBroadcaster br;
     tf::Transform transform;
 
-    if (count_antenna%2)
+    if(antenna_num == 0)
     {
-        msg.antenna = 1;
-        pose_eigen = pose_eigen * offset_left;
+        msg.antenna = 0;
         tf::transformEigenToTF (pose_eigen, transform);
-        br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, "offset_left"));
+        br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, "antenna"));
     }
     else
     {
-        msg.antenna = 2;
-        pose_eigen = pose_eigen * offset_right;
-        tf::transformEigenToTF (pose_eigen, transform);
-        br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, "offset_right"));
+        int antenna_id = count_antenna%antenna_num;
+        msg.antenna = antenna_id + 1;
+        double x = antennaOffset[antenna_id*3];
+        double y = antennaOffset[antenna_id*3+1];
+        double z = antennaOffset[antenna_id*3+2];
+        Eigen::Affine3d trans = Eigen::Affine3d::Identity();
+        trans.translate(Vector3d(x,y,z));
+        pose_eigen = pose_eigen * trans;
+        tf::transformEigenToTF(pose_eigen, transform);
+        br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, "antenna"+std::to_string(msg.antenna)));
     }
+
     count_antenna = count_antenna+1;
 
     double distance = sqrt(
@@ -63,7 +69,6 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     transform.setOrigin( tf::Vector3(nodesPos[count*3  ],nodesPos[count*3+1], nodesPos[count*3+2]));
     br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, std::to_string(count)+"anchor"));
 
-
     msg.distance = distance + d(gen);
     msg.distance_err = 0.02;
     msg.responder_location.x = nodesPos[count*3];
@@ -71,7 +76,7 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
     msg.responder_location.z = nodesPos[count*3+2];
     uwb_pub.publish(msg);
 
-    if (count_antenna%2)
+    if (count_antenna%antenna_num == 0)
         count = (count+1)%node_num;
 
     ros::Duration(0.025).sleep();
@@ -110,7 +115,6 @@ int main(int argc, char **argv)
     offset_right.setIdentity();
     offset_left.translate(Vector3d(1, 0, 0));
     offset_right.translate(Vector3d(-1, 0, 0));
-    // cout<<offset_right<<" "<<offset_left<<endl;
 
     ros::spin();
 
