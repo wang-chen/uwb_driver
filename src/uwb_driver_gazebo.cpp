@@ -56,6 +56,7 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
         pose_eigen = pose_eigen * trans;
         tf::transformEigenToTF(pose_eigen, transform);
         br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, "antenna"+std::to_string(msg.antenna)));
+        std::cout << " " <<"antenna"+std::to_string(msg.antenna)<< " " << std::endl;
     }
 
     count_antenna = count_antenna+1;
