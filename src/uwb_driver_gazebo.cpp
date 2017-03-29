@@ -24,6 +24,7 @@ std::normal_distribution<> d(0,0.02);
 
 void gazeboCallback(const geometry_msgs::PoseStamped pose)
 {
+    // frame_id : world
     uwb_driver::UwbRange msg;
     msg.header = std_msgs::Header();
     msg.header.frame_id = "uwb";
@@ -56,7 +57,7 @@ void gazeboCallback(const geometry_msgs::PoseStamped pose)
         pose_eigen = pose_eigen * trans;
         tf::transformEigenToTF(pose_eigen, transform);
         br.sendTransform(tf::StampedTransform(transform, pose.header.stamp, pose.header.frame_id, "antenna"+std::to_string(msg.antenna)));
-        std::cout << " " <<"antenna"+std::to_string(msg.antenna)<< " " << std::endl;
+        // std::cout << " " <<"antenna"+std::to_string(msg.antenna)<< " " << std::endl;
     }
 
     count_antenna = count_antenna+1;
