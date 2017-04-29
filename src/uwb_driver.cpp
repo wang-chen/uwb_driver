@@ -496,7 +496,33 @@ int main(int argc, char *argv[])
         printf(KRED "Nodes location not specified!\n" RESET);
         exit(0);
     }
+	
+	//Collect the calibration numbers
+	std::vector<double> albega;
+    if(uwbDriverNodeHandle.getParam("/uwb/albega", albega))
+    {
+        if((albega.size() %3) != 0 || (albega.size() == 0))
+        {
+			printf(KRED "Calibration locations not whole. Exitting\n" RESET);
+			return 0;
+        }
+        else
+        {
+            printf(KBLU "Retrieved calibration values: \n" RESET);
+            for(int i = 0; i < albega.size(); i++)
+                printf(KBLU "\t%f", albega[i]);
+			printf("\n" RESET);
 
+        }
+    }
+    else
+	{
+        printf(KRED "Calibration not specified. Using default: 1.0, 0, 200!\n" RESET);
+		albega.push_back(1.0);
+		albega.push_back(0.0);
+		albega.push_back(200.0);
+	}
+	
     //Redundant
     int p4xxQueryRate = DFLT_NODE_RATE;
     if(uwbDriverNodeHandle.getParam("p4xxQueryRate", p4xxQueryRate))
@@ -576,10 +602,10 @@ int main(int argc, char *argv[])
         switch(p4xxMode)
         {
         case MODE_RCM:
-            printf(KBLU "Started with RCM mode %\n" RESET);
+            printf(KBLU "Started with RCM mode\n" RESET);
             break;
         case MODE_RN:
-            printf(KBLU "Started with RN mode %\n" RESET);
+            printf(KBLU "Started with RN mode\n" RESET);
             break;
         default:
             printf(KYEL "Not RCM or RN specific! Default is RCM.\n" RESET);
@@ -843,7 +869,7 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.responder_LED_flag = rangeInfo.respLEDFlags;
                 uwb_range_info_msg.noise = rangeInfo.noise;
                 uwb_range_info_msg.vPeak = rangeInfo.vPeak;
-                uwb_range_info_msg.distance = rangeInfo.precisionRangeMm/1000.0;
+                uwb_range_info_msg.distance = (rangeInfo.precisionRangeMm/1000.0 > albega[2])? (rangeInfo.precisionRangeMm/1000.0) : (albega[0]*rangeInfo.precisionRangeMm/1000.0 + albega[1]);
                 uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000.0;
                 uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
                 uwb_range_info_msg.distance_dot_err = rangeInfo.filteredRangeVel/1000.0;
