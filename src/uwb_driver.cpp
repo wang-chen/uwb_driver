@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
     //Collect the calibration numbers
     std::vector<std::vector<double>> albega;
     std::vector<double> albegaA, albegaB;
-    if(uwbDriverNodeHandle.getParam("albega", albegaA))
+    if(uwbDriverNodeHandle.getParam("albegaA", albegaA))
     {
         if((albegaA.size() %3) != 0 || (albegaA.size() == 0))
         {
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
     }
 
 
-    if(uwbDriverNodeHandle.getParam("albega", albegaB))
+    if(uwbDriverNodeHandle.getParam("albegaB", albegaB))
     {
         if((albegaB.size() %3) != 0 || (albegaB.size() == 0))
         {
