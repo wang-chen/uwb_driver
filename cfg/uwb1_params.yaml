@@ -1,7 +1,11 @@
-uwb:
+uwb1:
 
 # UWB's Anchor Configuration Parameters
   nodesId: [100, 200, 201]
   nodesPos: [0, 0, 1.5, 0, 0, 0, 0, 0, 0]
   antennaOffset: [0, 0, 0, 0, 0, 0, 0, 0, 0]
   # comment the line of antennaOffset, if there are no antennaoffset
+  
+# For calibration 
+  albegaA: [1.0, -0.2, 200]
+  albegaB: [1.0, -0.2, 200]

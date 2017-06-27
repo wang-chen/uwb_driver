@@ -48,6 +48,9 @@
 #include "uwb_driver/uwbRangeComm.h"
 #include "srv_return_verbal.h"
 
+//Force configuration for nodes ID
+#include <glob.h>
+
 //_____________________________________________________________________________
 //
 // Debugging utilities
@@ -64,15 +67,6 @@
 #define RESET "\033[0m"
 
 #define DFLT_NODE_RATE      40
-//_____________________________________________________________________________
-//
-// ID Management
-//_____________________________________________________________________________
-
-//localization data
-std::vector<int> nodesId;
-uint8_T nodesTotal = 0;
-std::vector<double>nodesPos;
 
 //_____________________________________________________________________________
 //
@@ -93,20 +87,27 @@ int status;
 rcmIfType rcmIf;
 rcmConfiguration rcmConfig;
 rnConfiguration rnInitConfig;
+rnTDMAConfiguration rnTDMAConfig;
 rnMsg_GetTDMASlotmapConfirm rnInitTdmaSlotMap;
 rnMsg_SetTDMASlotmapRequest initTdmaSlotMapSet;
 // Info message structures
 rcmMsg_FullRangeInfo rangeInfo;
 rnMsg_GetFullNeighborDatabaseConfirm ndbInfo;
 rcmMsg_DataInfo dataInfo;
-uint8_T uwb_msg[RN_USER_DATA_LENGTH];
+uint8_t uwb_msg[RN_USER_DATA_LENGTH];
+
+//To search for the device name
+glob_t glob_results;
 
 //_____________________________________________________________________________
 //
-// Functions-wide shared variable
+// ID Management
 //_____________________________________________________________________________
-static int32_T hostedP4xxId = -1;
-static int32_T hostedP4xxIdx = -1;
+std::vector<int> nodesId;
+uint8_t nodesTotal = 0;
+std::vector<double>nodesPos;
+static int32_t hostedP4xxId = -1;
+static int32_t hostedP4xxIdx = -1;
 
 int p4xxMode = MODE_RCM;
 bool slumberTime = false;
@@ -188,6 +189,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         {
             // Handle byte ordering
             confirm.msgType = ntohs(confirm.msgType);
+            confirm.status = ntohs(confirm.status);            
 
             // is this the correct message type?
             if(confirm.msgType == RCM_SEND_RANGE_REQUEST_CONFIRM && confirm.status == OK)
@@ -243,6 +245,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         {
             // Handle byte ordering
             confirm.msgType = ntohs(confirm.msgType);
+            confirm.status = ntohs(confirm.status);            
 
             // is this the correct message type?
             if (confirm.msgType == RCM_SEND_DATA_CONFIRM && confirm.status == OK)
@@ -295,6 +298,7 @@ bool uwb_range_comm(uwb_driver::uwbRangeComm::Request &req, uwb_driver::uwbRange
         {
             // Handle byte ordering
             confirm.msgType = ntohs(confirm.msgType);
+            confirm.status = ntohs(confirm.status);            
 
             // is this the correct message type?
             if (confirm.msgType == RCM_SEND_CHANNELIZED_RANGE_REQUEST_CONFIRM && confirm.status == OK)
@@ -453,7 +457,7 @@ int main(int argc, char *argv[])
     }
 
     //Collect the nodes IDs
-    if(uwbDriverNodeHandle.getParam("/uwb/nodesId", nodesId))
+    if(uwbDriverNodeHandle.getParam("nodesId", nodesId))
     {
         nodesTotal = nodesId.size();
         printf(KBLU "Retrieved %d nodes IDs: ", nodesTotal);
@@ -468,7 +472,7 @@ int main(int argc, char *argv[])
     }
 
     //Collect the node Positions
-    if(uwbDriverNodeHandle.getParam("/uwb/nodesPos", nodesPos))
+    if(uwbDriverNodeHandle.getParam("nodesPos", nodesPos))
     {
         if( (nodesPos.size() / (double)nodesTotal) != 3)
         {
@@ -497,32 +501,65 @@ int main(int argc, char *argv[])
         exit(0);
     }
 	
-	//Collect the calibration numbers
-	std::vector<double> albega;
-    if(uwbDriverNodeHandle.getParam("/uwb/albega", albega))
+    //Collect the calibration numbers
+    std::vector<std::vector<double>> albega;
+    std::vector<double> albegaA, albegaB;
+    if(uwbDriverNodeHandle.getParam("albega", albegaA))
     {
-        if((albega.size() %3) != 0 || (albega.size() == 0))
+        if((albegaA.size() %3) != 0 || (albegaA.size() == 0))
         {
-			printf(KRED "Calibration locations not whole. Exitting\n" RESET);
-			return 0;
+            printf(KRED "Calibration locations not whole. Use identity calibration\n" RESET);
+            albegaA.push_back(1.0);
+            albegaA.push_back(0.0);
+            albegaA.push_back(200);
         }
         else
         {
             printf(KBLU "Retrieved calibration values: \n" RESET);
             for(int i = 0; i < albega.size(); i++)
-                printf(KBLU "\t%f", albega[i]);
-			printf("\n" RESET);
+                printf(KBLU "\t%f", albegaA[i]);
+            printf("\n" RESET);
 
         }
     }
     else
-	{
+    {
         printf(KRED "Calibration not specified. Using default: 1.0, 0, 200!\n" RESET);
-		albega.push_back(1.0);
-		albega.push_back(0.0);
-		albega.push_back(200.0);
-	}
-	
+        albegaA.push_back(1.0);
+        albegaA.push_back(0.0);
+        albegaA.push_back(200.0);
+    }
+
+
+    if(uwbDriverNodeHandle.getParam("albega", albegaB))
+    {
+        if((albegaB.size() %3) != 0 || (albegaB.size() == 0))
+        {
+            printf(KRED "Calibration locations not whole. Use identity calibration\n" RESET);
+            albegaB.push_back(1.0);
+            albegaB.push_back(0.0);
+            albegaB.push_back(200);
+        }
+        else
+        {
+            printf(KBLU "Retrieved calibration values: \n" RESET);
+            for(int i = 0; i < albega.size(); i++)
+                printf(KBLU "\t%f", albegaB[i]);
+            printf("\n" RESET);
+
+        }
+    }
+    else
+    {
+        printf(KRED "Calibration not specified. Using default: 1.0, 0, 200!\n" RESET);
+        albegaB.push_back(1.0);
+        albegaB.push_back(0.0);
+        albegaB.push_back(200.0);
+    }
+
+    albega.push_back(albegaA);
+    albega.push_back(albegaB);
+
     //Redundant
     int p4xxQueryRate = DFLT_NODE_RATE;
     if(uwbDriverNodeHandle.getParam("p4xxQueryRate", p4xxQueryRate))
@@ -633,6 +670,63 @@ int main(int argc, char *argv[])
         autoConfigRn = false;
     }
 
+    bool portFound = false;
+    int firstUnmatchedPort = -1;
+    string p4xxIdNum;
+
+    string p4xxSerialPortAffix = string("/dev/serial/by-id/usb-1027_Time_Domain_P440_*-if00");
+    string p4xxSerialPortFullName = string("/dev/serial/by-id/usb-1027_Time_Domain_P440_") + p4xxSerialPort + string("-if00");
+
+    while(!portFound && ros::ok())
+    {
+        glob(p4xxSerialPortAffix.c_str(), 0, NULL, &glob_results);
+        // printf("Port \"%s\" not found!\n"RESET, p4xxSerialPortFull.data());
+        int matches = glob_results.gl_pathc;
+        if (matches != 0)
+        {
+            printf("Ports found: \n");
+            for(int i = 0; i < matches; i++)
+            {
+                if(strcmp(glob_results.gl_pathv[glob_results.gl_offs + i],
+                    p4xxSerialPortFullName.data()) == 0)
+                {
+                    printf("\tMatched: %s\n", glob_results.gl_pathv[glob_results.gl_offs + i]);
+                    globfree(&glob_results);
+                    portFound = true;
+                    break;
+                }
+                else
+                {
+                    printf(KYEL "\tPassed: %s\n" RESET, glob_results.gl_pathv[glob_results.gl_offs + i]);
+                    if(firstUnmatchedPort == -1)
+                        firstUnmatchedPort = i;
+                }
+            }
+        }
+        else
+            printf("No ports available!\n");
+
+        // Reconfigure port's ID
+        if(firstUnmatchedPort != -1)
+        {
+            p4xxSerialPortFullName = string(glob_results.gl_pathv[glob_results.gl_offs + firstUnmatchedPort]);
+            //Erase the end
+            p4xxSerialPortFullName.erase(p4xxSerialPortFullName.find("-if00"), 5);
+            //get the ID number
+            p4xxIdNum = p4xxSerialPortFullName.substr(p4xxSerialPortAffix.length()-6,
+                                                            p4xxSerialPortFullName.length()-(p4xxSerialPortAffix.length()-1));
+            printf("\tPort %s will be reconfigured to %s.\n", p4xxIdNum.data(), p4xxSerialPort.data());
+            globfree(&glob_results);
+            break;
+
+        }
+        else
+            p4xxIdNum = p4xxSerialPort;
+
+        globfree(&glob_results);
+        ros::Duration(0.5).sleep();
+    }
+
     printf("\nRCM Localization App\n\n");
 
     if(p4xxInterface == P4XX_ITF_SERIAL)
@@ -640,8 +734,8 @@ int main(int argc, char *argv[])
     else if (p4xxInterface == P4XX_ITF_USB)
         rcmIf = rcmIfUsb;
 
-    // initialize the interface to the RCM
-    if (rcmIfInit(rcmIf, &p4xxSerialPort[0]) != OK)
+    // initialize the interface to the P4xx
+    if (rcmIfInit(rcmIf, &p4xxIdNum[0]) != OK)
     {
         printf("Initialization failed.\n");
         exit(0);
@@ -683,30 +777,34 @@ int main(int argc, char *argv[])
     }
     else
     {
-        //check for device node ID
-        int32_T uwbNodeId = rcmConfig.nodeId;
+        if(!portFound)
+        {
+            rcmConfig.nodeId = stoi(p4xxSerialPort);
 
-        //search for index in the mobile profile
-        hostedP4xxId = -1;
-
-        for (uint32_T i = 0; i < nodesTotal; i++)
-            if(uwbNodeId == nodesId[i])
+            while(rcmConfigSet(&rcmConfig) != 0 && ros::ok())
             {
-                hostedP4xxId = uwbNodeId;
-                hostedP4xxIdx = i;
+                printf("Time out waiting for RCM_CONFIG_SET_CONFIRM.\n");
+                if(!ignrTimeoutUwbInit)
+                    exit(0);
             }
+            printf("Node ID reconfigured successfully\n");
 
-        if(hostedP4xxId == -1)
-        {
-            printf("Node not involved! Exiting\n");
-            exit(0);
-        }
-        else
-        {
-            printf(KBLU "Device ID: %d\n" RESET, rcmConfig.nodeId);
-            uwbDriverNodeHandle.setParam("/uwb/hostedP4xxId", uwbNodeId);
+            rcmConfig.nodeId = -1;
+            while(rcmConfigGet(&rcmConfig) != 0)
+            {
+                printf("Time out waiting for RCM_CONFIG_GET_CONFIRM.\n");
+                if(!ignrTimeoutUwbInit)
+                    exit(0);
+            }
         }
     }
+
+    hostedP4xxId = rcmConfig.nodeId;
+    for (uint32_t i = 0; i < nodesId.size(); i++)
+    if(hostedP4xxId == nodesId[i])
+                hostedP4xxIdx = i;
+    printf("Node ID: %d. Node Index: %d\n", hostedP4xxId, hostedP4xxIdx);
+
 
     //initialize P4xx serial interface
     if(p4xxMode == MODE_RCM)
@@ -728,72 +826,187 @@ int main(int argc, char *argv[])
         }
 
     }
-    else
+
+    if(autoConfigRn)
     {
-        if(autoConfigRn)
+        string smFileName = string("");
+        if(uwbDriverNodeHandle.getParam("smFileName", smFileName))
+            printf(KBLU "Retrieved value %s for param 'smFileName'!\n" RESET, smFileName.data());
+        else
         {
-            // Set the NDB Neighbor Age arbitrarily high to keep nodes from dropping out
-            rnInitConfig.maxNeighborAgeMs = 4294967295;
-
-            // Set network mode to TDMA
-            rnInitConfig.networkSyncMode = RN_NETWORK_SYNC_MODE_TDMA;
-
-            //Range type for NDB = PRM;
-            rnInitConfig.rnFlags &= ~(1<<2);
-
-            // Autosend the range.
-            rnInitConfig.autosendType = 0x01;
-
-            // Let's do a NDB update rate of 100 ms
-            // rnInitConfig.autosendNeighborDbUpdateIntervalMs = 100;
-
-            if (rnConfigSet(&rnInitConfig) != 0)
-            {
-                printf("Time out waiting for rnConfig confirm.\n");
-                if(!ignrTimeoutUwbInit)
-                    exit(0);
-            }
-
-            printf(KYEL "Slotmap auto-configuration not yet developed! Using the current configuration!" RESET);
-
-            // Retrieve TDMA slot map
-            while (rnTdmaSlotMapGet(&rnInitTdmaSlotMap) != 0 && ros::ok())
-            {
-                printf("Time out waiting for rnTdmaSlotMap confirm.\n");
-                if(!ignrTimeoutUwbInit)
-                    exit(0);
-            }
-
-            for (uint32_T i = 0; i < rnInitTdmaSlotMap.numSlots; i++)
-            {
-                printf(KBLU "SLOT %02d: ", rnInitTdmaSlotMap.slots[i].slot.slotNumber);
-                printf("Req ID:%u   ", rnInitTdmaSlotMap.slots[i].slot.requesterId);
-                printf("Rsp ID:%u   ", rnInitTdmaSlotMap.slots[i].slot.responderId);
-                printf("Pii:%u   ", rnInitTdmaSlotMap.slots[i].slot.integrationIndex);
-                printf("Channel:%u   ", rnInitTdmaSlotMap.slots[i].slot.codeChannel);
-                printf("Antenna:%u   ", rnInitTdmaSlotMap.slots[i].slot.antennaMode);
-                printf("Flags:0x%X   ", rnInitTdmaSlotMap.slots[i].slot.flags);
-                printf("Type:%u   ", rnInitTdmaSlotMap.slots[i].slot.slotType);
-                printf("Man Time:%u\n" RESET, rnInitTdmaSlotMap.slots[i].slot.requestedDurationMicroseconds);
-            }
+            printf(KRED "Couldn't retrieve param 'smFileName', program closed!\n" RESET);
+            return 0;
         }
 
-        // Make sure opmode is RN mode
-        while(rcmOpModeSet(RCRM_OPMODE_RN) != 0 && ros::ok())
+        struct stat buf;
+        if(stat(smFileName.c_str(), &buf) != -1)
+            printf("\tCSV found: %s\n", smFileName.c_str());
+        else
         {
-            printf("Time out waiting for opmode set.\n");
+            printf(KRED "\tCSV not found!\n" RESET);
+            exit(-1);
+        }
+
+        ifstream smFile (smFileName.data());
+        string line;
+
+        //Ditch the first row of titles
+        getline(smFile, line);
+
+        uint8_t k = 0;
+        while(!smFile.eof())
+        {
+            //Get the slot number
+            getline(smFile, line, ',');
+            if(line.length() == 0)
+                break;
+
+            cout << "# " << line << endl;
+            initTdmaSlotMapSet.slots[k].slotNumber = atoi(line.c_str());
+
+            getline(smFile, line, ',');
+            cout << "rqsterId: " << line << endl;
+            initTdmaSlotMapSet.slots[k].requesterId = atoi(line.c_str());
+
+            getline(smFile, line, ',');
+            cout << "responderId: " << line << endl;
+            initTdmaSlotMapSet.slots[k].responderId = atoi(line.c_str());
+
+            getline(smFile, line, ',');
+            cout << "integrationIndex: " << line << endl;
+            initTdmaSlotMapSet.slots[k].integrationIndex = atoi(line.c_str());
+
+            getline(smFile, line, ',');
+            cout << "codeChannel: " << line << endl;
+            initTdmaSlotMapSet.slots[k].codeChannel = atoi(line.c_str());
+
+            getline(smFile, line, ',');
+            cout << "antennaMode: " << line << endl;
+            if (strcmp(line.data(), "Antenna A") == 0)
+                initTdmaSlotMapSet.slots[k].antennaMode = 0;
+            else if (strcmp(line.data(), "Antenna B") == 0)
+                initTdmaSlotMapSet.slots[k].antennaMode = 1;
+            else if (strcmp(line.data(), "TX A / RX B") == 0)
+                initTdmaSlotMapSet.slots[k].antennaMode = 2;
+            else if (strcmp(line.data(), "TX B / RX A") == 0)
+                initTdmaSlotMapSet.slots[k].antennaMode = 3;
+            else if (strcmp(line.data(), "Toggle A/B") == 0)
+                initTdmaSlotMapSet.slots[k].antennaMode = 128;
+            else
+                initTdmaSlotMapSet.slots[k].antennaMode = 0;
+
+            initTdmaSlotMapSet.slots[k].flags = 0;
+            getline(smFile, line, ',');
+            cout << "rqstData: " << line << endl;
+            if (strcmp(line.data(), "1") == 0)
+                initTdmaSlotMapSet.slots[k].flags |= 0x02;
+            
+            getline(smFile, line, ',');
+            cout << "rspdData: " << line << endl;
+            if (strcmp(line.data(), "1") == 0)
+                initTdmaSlotMapSet.slots[k].flags |= 0x04;
+
+            //Slot type is range by default
+            getline(smFile, line, ',');
+            cout << "slotType: " << line << endl;
+            initTdmaSlotMapSet.slots[k].slotType = 1;
+
+            // Ditch the sleep entry
+            getline(smFile, line, ',');
+            cout << "sleep: " << line << endl;
+
+            getline(smFile, line, ',');
+            cout << "requestedDurationMicroseconds: " << line << endl;
+            initTdmaSlotMapSet.slots[k].requestedDurationMicroseconds = atoi(line.c_str())*1000;
+
+            // Ditch the calculated time entry
+            getline(smFile, line, '\n');
+            cout << "calc. requestedDurationMicroseconds: " << line << endl << endl;
+
+            k++;
+            initTdmaSlotMapSet.numSlots = k;
+        }
+
+        // Set TDMA slot map
+        while (rnTdmaSlotMapSet(&initTdmaSlotMapSet) != 0 && ros::ok())
+        {
+            printf("Time out waiting for rnTdmaSlotMap confirm.\n");
             if(!ignrTimeoutUwbInit)
                 exit(0);
         }
 
-        // Set the P4xx to active mode
-        if (rcmSleepModeSet(RCRM_SLEEP_MODE_ACTIVE) != 0)
+        // Set the NDB Neighbor Age arbitrarily high to keep nodes from dropping out
+        rnInitConfig.maxNeighborAgeMs = 4294967295;
+
+        // Set network mode to TDMA
+        rnInitConfig.networkSyncMode = RN_NETWORK_SYNC_MODE_TDMA;
+
+        //Range type for NDB = PRM;
+        rnInitConfig.rnFlags &= ~(1<<2);
+
+        // Autosend the range.
+        rnInitConfig.autosendType = 0x01;
+
+        if (rnConfigSet(&rnInitConfig) != 0)
         {
-            printf("Time out waiting for sleep mode set.\n");
+            printf("Time out waiting for rnConfig confirm.\n");
             if(!ignrTimeoutUwbInit)
                 exit(0);
+        }
+
+        // Retrieve TDMA slot map
+        while (rnTdmaSlotMapGet(&rnInitTdmaSlotMap) != 0 && ros::ok())
+        {
+            printf("Time out waiting for rnTdmaSlotMap confirm.\n");
+            if(!ignrTimeoutUwbInit)
+                exit(0);
+        }
+
+        if (rnTdmaConfigGet(&rnTDMAConfig) != 0)
+        {
+            printf("Time out waiting for rnConfig confirm.\n");
+            if(!ignrTimeoutUwbInit)
+                exit(0);
+        }
+
+        printf("TDMA Current config: Max rqst data %d, Max rspd data %d\n",
+                    rnTDMAConfig.maxRequestDataSize, rnTDMAConfig.maxResponseDataSize);
+
+        rnTDMAConfig.maxRequestDataSize = 100;
+        rnTDMAConfig.maxResponseDataSize = 0;
+
+        // Retrieve TDMA config
+        while (rnTdmaConfigSet(&rnTDMAConfig) != 0 && ros::ok())
+        {
+            printf("Time out waiting for rnTdmaSlotMap confirm.\n");
+            if(!ignrTimeoutUwbInit)
+                exit(0);
+        }
+
+        for (uint32_t i = 0; i < rnInitTdmaSlotMap.numSlots; i++)
+        {
+            printf(KBLU "SLOT %02d: ", rnInitTdmaSlotMap.slots[i].slot.slotNumber);
+            printf("Req ID:%u   ", rnInitTdmaSlotMap.slots[i].slot.requesterId);
+            printf("Rsp ID:%u   ", rnInitTdmaSlotMap.slots[i].slot.responderId);
+            printf("Pii:%u   ", rnInitTdmaSlotMap.slots[i].slot.integrationIndex);
+            printf("Channel:%u   ", rnInitTdmaSlotMap.slots[i].slot.codeChannel);
+            printf("Antenna:%u   ", rnInitTdmaSlotMap.slots[i].slot.antennaMode);
+            printf("Flags:0x%X   ", rnInitTdmaSlotMap.slots[i].slot.flags);
+            printf("Type:%u   ", rnInitTdmaSlotMap.slots[i].slot.slotType);
+            printf("Man Time:%u\n" RESET, rnInitTdmaSlotMap.slots[i].slot.requestedDurationMicroseconds);
         }
     }
+
+    // Set the P4xx to active mode
+    if (rcmSleepModeSet(RCRM_SLEEP_MODE_ACTIVE) != 0)
+    {
+        printf("Time out waiting for sleep mode set.\n");
+        if(!ignrTimeoutUwbInit)
+            exit(0);
+    }
+
+    // Set the hosted Id number
+    uwbDriverNodeHandle.setParam("/uwb/hostedP4xxId", hostedP4xxId);
 
     ros::ServiceServer modeService = uwbDriverNodeHandle.advertiseService("/uwb_mode_config", uwb_mode_config);
     ROS_INFO(KGRN "UWB MODE SERVICE AVAILABLE." RESET);
@@ -811,18 +1024,21 @@ int main(int argc, char *argv[])
     while(ros::ok())
     {
         ros::spinOnce();
-        std::vector<double> nodesPosUpd;
+        std::vector<double> ancsPosUpd;
 
         //Check if the positions have been updated
-        if(uwbDriverNodeHandle.getParam("/uwb/nodesPosUpd", nodesPosUpd))
+        if(uwbDriverNodeHandle.getParam("/uwb/ancsPosUpd", ancsPosUpd))
         {
-            if(nodesPosUpd.size() == nodesPos.size())
-                nodesPos = nodesPosUpd;
+            if(ancsPosUpd.size() == nodesPos.size() - 3)
+            {
+                for(int i = 0; i < ancsPosUpd.size(); i++)
+                nodesPos[i] = ancsPosUpd[i];
+            }
         }
-        uint8_T msg_type = -1;
+        uint8_t msg_type = -1;
         //Check and find the coresponding index of the update
         int nodeIndex = -1;
-        uint8_T msg_type_rt = 1;
+        uint8_t msg_type_rt = 1;
         switch (msg_type_rt = rcmInfoGet(&rangeInfo, &dataInfo, &ndbInfo))//get distance
         {
         case RANGEINFO:
@@ -830,7 +1046,7 @@ int main(int argc, char *argv[])
             if(rangeInfo.precisionRangeMm < 75000)
             {
                 for(int i = 0; i < nodesTotal; i++)
-                    if((uint32_T)nodesId[i] == rangeInfo.responderId)
+                    if((uint32_t)nodesId[i] == rangeInfo.responderId)
                     {
                         nodeIndex = i;
                         msg_type = RANGEINFO;
@@ -841,7 +1057,7 @@ int main(int argc, char *argv[])
         case DATAINFO:
         {
             for(int i = 0; i < nodesTotal; i++)
-                if((uint32_T)nodesId[i] == dataInfo.sourceId)
+                if((uint32_t)nodesId[i] == dataInfo.sourceId)
                 {
                     nodeIndex = i;
                     msg_type = DATAINFO;
@@ -869,11 +1085,11 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.responder_LED_flag = rangeInfo.respLEDFlags;
                 uwb_range_info_msg.noise = rangeInfo.noise;
                 uwb_range_info_msg.vPeak = rangeInfo.vPeak;
-                uwb_range_info_msg.distance = (rangeInfo.precisionRangeMm/1000.0 > albega[2])? (rangeInfo.precisionRangeMm/1000.0) : (albega[0]*rangeInfo.precisionRangeMm/1000.0 + albega[1]);
+                uwb_range_info_msg.distance = (rangeInfo.precisionRangeMm/1000.0 > albega[rangeInfo.antennaMode][2])? (rangeInfo.precisionRangeMm/1000.0) : (albega[rangeInfo.antennaMode][0]*rangeInfo.precisionRangeMm/1000.0 + albega[rangeInfo.antennaMode][1]);
                 uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000.0;
                 uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
                 uwb_range_info_msg.distance_dot_err = rangeInfo.filteredRangeVel/1000.0;
-                uwb_range_info_msg.antenna = rangeInfo.antennaMode;
+                uwb_range_info_msg.antenna = rangeInfo.antennaMode + (hostedP4xxIdx-1)*2;
                 uwb_range_info_msg.stopwatch_time = rangeInfo.stopwatchTime;
                 uwb_range_info_msg.uwb_time = rangeInfo.timestamp;
                 uwb_range_info_msg.responder_location.x = nodesPos[nodeIndex*3];
@@ -941,6 +1157,7 @@ int main(int argc, char *argv[])
         if(slumberTime)
         {
             rcmIfClose();
+            printf("uwb_driver recessing...!\n");
             ros::Duration oneMonthTime(2592000);
             oneMonthTime.sleep();
         }
