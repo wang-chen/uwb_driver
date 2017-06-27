@@ -36,5 +36,5 @@
         <param name="autoConfigRn" type="bool" value="true" />
         <param name="smFileName" value="/home/odroid/slotmaps/smicra/201.csv" />
     </node>
-  
+	
 </launch>

@@ -109,6 +109,7 @@ std::vector<double>nodesPos;
 static int32_t hostedP4xxId = -1;
 static int32_t hostedP4xxIdx = -1;
 
+int p4xxCurrMode = MODE_RCM;
 int p4xxMode = MODE_RCM;
 bool slumberTime = false;
 
@@ -145,7 +146,7 @@ bool uwb_mode_config(uwb_driver::uwbModeConfig::Request &req, uwb_driver::uwbMod
         {
             ROS_INFO(KGRN "Mode %d confirmed!" RESET, req.p4xxmode);
             res.result = P4XX_CONFIRMED;
-            p4xxMode = req.p4xxmode;
+            p4xxCurrMode = req.p4xxmode;
             return true;
         }
     }
@@ -654,8 +655,8 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf(KYEL "Couldn't retrieve param 'p4xxMode'. Started with default mode RCM!\n" RESET);
-        p4xxMode = MODE_RCM;
+        printf(KYEL "Couldn't retrieve param 'p4xxCurrMode'. Started with default mode RCM!\n" RESET);
+        p4xxCurrMode = MODE_RCM;
     }
 
     bool autoConfigRn = true;
@@ -702,8 +703,6 @@ int main(int argc, char *argv[])
                         firstUnmatchedPort = i;
                 }
 				
-				printf("hello4\n");
-
             }
         }
         else
@@ -712,6 +711,7 @@ int main(int argc, char *argv[])
 		if(portFound)
 		{
 			p4xxIdNum = p4xxSerialPort;
+            globfree(&glob_results);
 			break;
 		}
 		else if(firstUnmatchedPort != -1)
@@ -726,9 +726,7 @@ int main(int argc, char *argv[])
             globfree(&glob_results);
             break;
 
-        }            
-        
-        globfree(&glob_results);
+        }                    
         ros::Duration(0.5).sleep();
     }
 	
@@ -747,6 +745,16 @@ int main(int argc, char *argv[])
         printf("Initialization failed.\n");
         exit(0);
     }
+
+    //Change to RCM mode directly to avoid all the unexpected confirm messages
+    while(rcmOpModeSet(RCRM_OPMODE_RCM) != 0 && ros::ok())
+    {
+        printf("Time out waiting for opmode set.\n");
+        if(!ignrTimeoutUwbInit)
+            exit(0);
+    }
+    p4xxCurrMode = MODE_RCM;
+    printf("RCM mode confirmed\n");
 
     // Make sure RCM is awake
     if (rcmSleepModeSet(RCRM_SLEEP_MODE_ACTIVE) != 0)
@@ -811,28 +819,6 @@ int main(int argc, char *argv[])
     if(hostedP4xxId == nodesId[i])
                 hostedP4xxIdx = i;
     printf("Node ID: %d. Node Index: %d\n", hostedP4xxId, hostedP4xxIdx);
-
-
-    //initialize P4xx serial interface
-    if(p4xxMode == MODE_RCM)
-    {
-        // Make sure opmode is RN mode
-        while(rcmOpModeSet(RCRM_OPMODE_RCM) != 0 && ros::ok())
-        {
-            printf("Time out waiting for opmode set.\n");
-            if(!ignrTimeoutUwbInit)
-                exit(0);
-        }
-
-        // Set the P4xx to active mode
-        if (rcmSleepModeSet(RCRM_SLEEP_MODE_ACTIVE) != 0)
-        {
-            printf("Time out waiting for sleep mode set.\n");
-            if(!ignrTimeoutUwbInit)
-                exit(0);
-        }
-
-    }
 
     if(autoConfigRn)
     {
@@ -1002,6 +988,21 @@ int main(int argc, char *argv[])
             printf("Type:%u   ", rnInitTdmaSlotMap.slots[i].slot.slotType);
             printf("Man Time:%u\n" RESET, rnInitTdmaSlotMap.slots[i].slot.requestedDurationMicroseconds);
         }
+
+
+        //Change to RN if requested
+        if(p4xxMode == MODE_RN)
+        {
+            // Make sure opmode is RN mode
+            while(rcmOpModeSet(RCRM_OPMODE_RN) != 0 && ros::ok())
+            {
+                printf("Time out waiting for opmode set.\n");
+                if(!ignrTimeoutUwbInit)
+                    exit(0);
+            }
+            p4xxCurrMode = MODE_RN;
+            printf("RN mode confirmed\n");
+        }
     }
 
     // Set the P4xx to active mode
@@ -1092,7 +1093,7 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.responder_LED_flag = rangeInfo.respLEDFlags;
                 uwb_range_info_msg.noise = rangeInfo.noise;
                 uwb_range_info_msg.vPeak = rangeInfo.vPeak;
-                uwb_range_info_msg.distance = (rangeInfo.precisionRangeMm/1000.0 > albega[rangeInfo.antennaMode][2])? (rangeInfo.precisionRangeMm/1000.0) : (albega[rangeInfo.antennaMode][0]*rangeInfo.precisionRangeMm/1000.0 + albega[rangeInfo.antennaMode][1]);
+                uwb_range_info_msg.distance = (rangeInfo.precisionRangeMm/1000.0 > albega[rangeInfo.antennaMode][2])?(rangeInfo.precisionRangeMm/1000.0) : (albega[rangeInfo.antennaMode][0]*rangeInfo.precisionRangeMm/1000.0 + albega[rangeInfo.antennaMode][1]);
                 uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000.0;
                 uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
                 uwb_range_info_msg.distance_dot_err = rangeInfo.filteredRangeVel/1000.0;
@@ -1156,8 +1157,6 @@ int main(int argc, char *argv[])
                     printf(KGRN "%02x ", uwb_data_info_msg.data[i]);
                 printf("%02x" RESET, uwb_data_info_msg.data[uwb_data_info_msg.data_size-1]);
                 printf("}\n");
-
-
             }
         }
 
