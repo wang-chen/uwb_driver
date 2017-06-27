@@ -1,4 +1,4 @@
-uwb:
+uwb0:
 
 # UWB's Anchor Configuration Parameters
   nodesId: [100, 200, 201]
