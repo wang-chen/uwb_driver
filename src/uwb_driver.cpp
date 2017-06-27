@@ -1097,7 +1097,7 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000.0;
                 uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
                 uwb_range_info_msg.distance_dot_err = rangeInfo.filteredRangeVel/1000.0;
-                uwb_range_info_msg.antenna = rangeInfo.antennaMode + (hostedP4xxIdx-1)*2;
+                uwb_range_info_msg.antenna = rangeInfo.antennaMode + (hostedP4xxIdx-1)*2 + 1;
                 uwb_range_info_msg.stopwatch_time = rangeInfo.stopwatchTime;
                 uwb_range_info_msg.uwb_time = rangeInfo.timestamp;
                 uwb_range_info_msg.responder_location.x = nodesPos[nodeIndex*3];
