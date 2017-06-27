@@ -701,13 +701,20 @@ int main(int argc, char *argv[])
                     if(firstUnmatchedPort == -1)
                         firstUnmatchedPort = i;
                 }
+				
+				printf("hello4\n");
+
             }
         }
         else
             printf("No ports available!\n");
-
-        // Reconfigure port's ID
-        if(firstUnmatchedPort != -1)
+		
+		if(portFound)
+		{
+			p4xxIdNum = p4xxSerialPort;
+			break;
+		}
+		else if(firstUnmatchedPort != -1)
         {
             p4xxSerialPortFullName = string(glob_results.gl_pathv[glob_results.gl_offs + firstUnmatchedPort]);
             //Erase the end
@@ -719,13 +726,13 @@ int main(int argc, char *argv[])
             globfree(&glob_results);
             break;
 
-        }
-        else
-            p4xxIdNum = p4xxSerialPort;
-
+        }            
+        
         globfree(&glob_results);
         ros::Duration(0.5).sleep();
     }
+	
+
 
     printf("\nRCM Localization App\n\n");
 
