@@ -108,6 +108,8 @@ uint8_t nodesTotal = 0;
 std::vector<double>nodesPos;
 static int32_t hostedP4xxId = -1;
 static int32_t hostedP4xxIdx = -1;
+int commonId = -1;
+int commonIdx = -1;
 
 int p4xxCurrMode = MODE_RCM;
 int p4xxMode = MODE_RCM;
@@ -501,6 +503,26 @@ int main(int argc, char *argv[])
         printf(KRED "Nodes location not specified!\n" RESET);
         exit(0);
     }
+
+    //Collect the common ID
+    if(uwbDriverNodeHandle.getParam("commonId", commonId))
+    {
+        printf(KBLU "Retrieved common ID %d for all range measurement: ", commonId);
+        for (uint32_t i = 0; i < nodesId.size(); i++)
+        {
+            if(commonId == nodesId[i])
+                commonIdx = i;
+            break;
+        }
+        printf("Common node ID: %d. Index: %d\n", commonId, commonIdx);
+
+    }
+    else
+    {
+        printf(KRED "Failed to collect common IDs. Use the default hostedP4xxId and index!\n" RESET);
+        commonId = -1;
+        commonIdx = -1;
+    }
 	
     //Collect the calibration numbers
     std::vector<std::vector<double>> albega;
@@ -816,7 +838,7 @@ int main(int argc, char *argv[])
 
     hostedP4xxId = rcmConfig.nodeId;
     for (uint32_t i = 0; i < nodesId.size(); i++)
-    if(hostedP4xxId == nodesId[i])
+        if(hostedP4xxId == nodesId[i])
                 hostedP4xxIdx = i;
     printf("Node ID: %d. Node Index: %d\n", hostedP4xxId, hostedP4xxIdx);
 
@@ -1085,8 +1107,8 @@ int main(int argc, char *argv[])
                 uwb_range_info_msg.header = std_msgs::Header();
                 uwb_range_info_msg.header.frame_id = "uwb";
                 uwb_range_info_msg.header.stamp = ros::Time::now();
-                uwb_range_info_msg.requester_id = hostedP4xxId;
-                uwb_range_info_msg.requester_idx = hostedP4xxIdx;
+                uwb_range_info_msg.requester_id = (commonId == -1)?hostedP4xxId:commonId;
+                uwb_range_info_msg.requester_idx = (commonId == -1)?hostedP4xxIdx:commonIdx;
                 uwb_range_info_msg.responder_id = nodesId[nodeIndex];
                 uwb_range_info_msg.responder_idx = nodeIndex;
                 uwb_range_info_msg.requester_LED_flag = rangeInfo.reqLEDFlags;
