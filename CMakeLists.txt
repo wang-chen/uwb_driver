@@ -65,7 +65,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
    FILES
    uwbModeConfig.srv
-   uwbRangeComm.srv
+   uwbRangeComm.srv 
  )
 
 ## Generate actions in the 'action' folder
