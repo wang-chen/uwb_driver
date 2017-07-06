@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
 <launch>
 
-    <rosparam file="$(find uwb_driver)/cfg/anchor.yaml" command="load" />
-
-    <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb_driver_node0" output="screen">
+    <rosparam file="$(find uwb_driver)/cfg/uwb_params.yaml" command="load" />
+    <rosparam file="$(find uwb_driver)/cfg/uwb0_params.yaml" command="load" />
+    <rosparam file="$(find uwb_driver)/cfg/uwb1_params.yaml" command="load" />
+    
+    <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb0" output="screen">
         <!-- configuration for the node -->
         <param name="p4xxQueryRate" type="int" value="100"/>
         <param name="reportRate" type="int" value="100"/>
@@ -15,7 +17,24 @@
         <param name="p4xxInterfaceChoice" type="int" value="1"/>
         <param name="p4xxSerialPort" type="string" value="200" />
         <param name="p4xxMode" type="int" value="1" />
-        <param name="autoConfigRn" type="bool" value="false" /> 
+        <param name="autoConfigRn" type="bool" value="true" />
+        <param name="smFileName" value="/home/odroid/slotmaps/smicra/200.csv" />
     </node>
-  
+
+    <node respawn="true" pkg="uwb_driver" type="uwb_driver_node" name="uwb1" output="screen">
+        <!-- configuration for the node -->
+        <param name="p4xxQueryRate" type="int" value="100"/>
+        <param name="reportRate" type="int" value="100"/>
+        <param name="restEnable" type="bool" value="false"/>
+        <param name="ignrTimeoutUwbInit" type="bool" value="true"/>
+        <param name="publishUwbInfo" type="bool" value="true"/>
+
+        <!-- configuration for the p4xx -->
+        <param name="p4xxInterfaceChoice" type="int" value="1"/>
+        <param name="p4xxSerialPort" type="string" value="201" />
+        <param name="p4xxMode" type="int" value="1" />
+        <param name="autoConfigRn" type="bool" value="true" />
+        <param name="smFileName" value="/home/odroid/slotmaps/smicra/201.csv" />
+    </node>
+	
 </launch>
