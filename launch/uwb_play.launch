@@ -3,11 +3,15 @@
 
 	<param name="use_sim_time" value="true" />
 
-    <rosparam file="$(find uwb_driver)/cfg/anchor_old.yaml" command="load" />
+    <rosparam file="$(find uwb_driver)/cfg/uwb_params.yaml" command="load" />
 
-    <node name="uwb_driver_play" pkg="rosbag" type="play" output="screen" args="-s 10 -l $(find uwb_driver)/bag/uwb_driver_square.bag"/>
+	<include file="$(find vcviz)/launch/vcviz.launch"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="uwb_to_vicon_tf" args="0 0 0 0 0 0  vicon_global_frame world 20" />
+	<include file="$(find localization)/launch/localization.launch"/>
+
+    <node name="uwb_driver_play" pkg="rosbag" type="play" output="screen" args="-s 10 -l $(find localization)/bag/uwb_ante_imu_2017-07-09-12-06-49.bag"/>
+
+    <!-- <node pkg="tf" type="static_transform_publisher" name="uwb_to_vicon_tf" args="0 0 0 0 0 0  vicon_global_frame world 20" /> -->
   
 </launch>
 

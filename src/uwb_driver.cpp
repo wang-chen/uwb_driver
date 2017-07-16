@@ -108,8 +108,6 @@ uint8_t nodesTotal = 0;
 std::vector<double>nodesPos;
 static int32_t hostedP4xxId = -1;
 static int32_t hostedP4xxIdx = -1;
-int commonId = -1;
-int commonIdx = -1;
 
 int p4xxCurrMode = MODE_RCM;
 int p4xxMode = MODE_RCM;
@@ -503,85 +501,65 @@ int main(int argc, char *argv[])
         printf(KRED "Nodes location not specified!\n" RESET);
         exit(0);
     }
-
-    //Collect the common ID
-    if(uwbDriverNodeHandle.getParam("commonId", commonId))
-    {
-        printf(KBLU "Retrieved common ID %d for all range measurement: ", commonId);
-        for (uint32_t i = 0; i < nodesId.size(); i++)
-        {
-            if(commonId == nodesId[i])
-                commonIdx = i;
-            break;
-        }
-        printf("Common node ID: %d. Index: %d\n", commonId, commonIdx);
-
-    }
-    else
-    {
-        printf(KRED "Failed to collect common IDs. Use the default hostedP4xxId and index!\n" RESET);
-        commonId = -1;
-        commonIdx = -1;
-    }
 	
     //Collect the calibration numbers
-    std::vector<std::vector<double>> albega;
-    std::vector<double> albegaA, albegaB;
-    if(uwbDriverNodeHandle.getParam("albegaA", albegaA))
+    std::vector<std::vector<double>> rangeOffset;
+    std::vector<double> rangeOffsetA;
+    if(uwbDriverNodeHandle.getParam("rangeOffsetA", rangeOffsetA))
     {
-        if((albegaA.size() %3) != 0 || (albegaA.size() == 0))
+        if(rangeOffsetA.size() != nodesTotal)
         {
-            printf(KRED "Calibration locations not whole. Use identity calibration\n" RESET);
-            albegaA.push_back(1.0);
-            albegaA.push_back(0.0);
-            albegaA.push_back(200);
+            printf(KRED "Calibration locations not valid. Initialize with zeros.\n" RESET);
+
+            for(int i = 0; i < nodesTotal; i++)
+                rangeOffsetA.push_back(0);
         }
         else
         {
-            printf(KBLU "Retrieved calibration values: \n" RESET);
-            for(int i = 0; i < albega.size(); i++)
-                printf(KBLU "\t%f", albegaA[i]);
+            printf(KBLU "Retrieved calibration values for antennas A: \n" RESET);
+            for(int i = 0; i < rangeOffsetA.size(); i++)
+                printf(KBLU "\t%f", rangeOffsetA[i]);
             printf("\n" RESET);
 
         }
     }
     else
     {
-        printf(KRED "Calibration not specified. Using default: 1.0, 0, 200!\n" RESET);
-        albegaA.push_back(1.0);
-        albegaA.push_back(0.0);
-        albegaA.push_back(200.0);
+        printf(KRED "Calibration not specified. Initialize with zeros!\n" RESET);
+
+        for(int i = 0; i < nodesTotal; i++)
+            rangeOffsetA.push_back(0);
     }
 
-
-    if(uwbDriverNodeHandle.getParam("albegaB", albegaB))
+    std::vector<double> rangeOffsetB;
+    if(uwbDriverNodeHandle.getParam("rangeOffsetB", rangeOffsetB))
     {
-        if((albegaB.size() %3) != 0 || (albegaB.size() == 0))
+        if(rangeOffsetB.size() != nodesTotal)
         {
-            printf(KRED "Calibration locations not whole. Use identity calibration\n" RESET);
-            albegaB.push_back(1.0);
-            albegaB.push_back(0.0);
-            albegaB.push_back(200);
+            printf(KRED "Calibration locations not valid. Initialize with zeros.\n" RESET);
+
+            for(int i = 0; i < nodesTotal; i++)
+                rangeOffsetB.push_back(0);
         }
         else
         {
-            printf(KBLU "Retrieved calibration values: \n" RESET);
-            for(int i = 0; i < albega.size(); i++)
-                printf(KBLU "\t%f", albegaB[i]);
+            printf(KBLU "Retrieved calibration values for antennas A: \n" RESET);
+            for(int i = 0; i < rangeOffsetB.size(); i++)
+                printf(KBLU "\t%f", rangeOffsetB[i]);
             printf("\n" RESET);
 
         }
     }
     else
     {
-        printf(KRED "Calibration not specified. Using default: 1.0, 0, 200!\n" RESET);
-        albegaB.push_back(1.0);
-        albegaB.push_back(0.0);
-        albegaB.push_back(200.0);
+        printf(KRED "Calibration not specified. Initialize with zeros!\n" RESET);
+
+        for(int i = 0; i < nodesTotal; i++)
+            rangeOffsetB.push_back(0);
     }
 
-    albega.push_back(albegaA);
-    albega.push_back(albegaB);
+    rangeOffset.push_back(rangeOffsetA);
+    rangeOffset.push_back(rangeOffsetB);
 
     //Redundant
     int p4xxQueryRate = DFLT_NODE_RATE;
@@ -1103,23 +1081,26 @@ int main(int argc, char *argv[])
         {
             if(msg_type == RANGEINFO && rangeInfo.rangeStatus == OK)
             {
+                uint8_t rqstAnt = rangeInfo.antennaMode & 0x0F;
+                uint8_t rspdAnt = (rangeInfo.antennaMode >> 4) & 0x0F;
+
                 uwb_driver::UwbRange uwb_range_info_msg;
                 uwb_range_info_msg.header = std_msgs::Header();
                 uwb_range_info_msg.header.frame_id = "uwb";
                 uwb_range_info_msg.header.stamp = ros::Time::now();
-                uwb_range_info_msg.requester_id = (commonId == -1)?hostedP4xxId:commonId;
-                uwb_range_info_msg.requester_idx = (commonId == -1)?hostedP4xxIdx:commonIdx;
+                uwb_range_info_msg.requester_id = hostedP4xxId;
+                uwb_range_info_msg.requester_idx = hostedP4xxIdx;
                 uwb_range_info_msg.responder_id = nodesId[nodeIndex];
                 uwb_range_info_msg.responder_idx = nodeIndex;
                 uwb_range_info_msg.requester_LED_flag = rangeInfo.reqLEDFlags;
                 uwb_range_info_msg.responder_LED_flag = rangeInfo.respLEDFlags;
                 uwb_range_info_msg.noise = rangeInfo.noise;
                 uwb_range_info_msg.vPeak = rangeInfo.vPeak;
-                uwb_range_info_msg.distance = (rangeInfo.precisionRangeMm/1000.0 > albega[rangeInfo.antennaMode][2])?(rangeInfo.precisionRangeMm/1000.0) : (albega[rangeInfo.antennaMode][0]*rangeInfo.precisionRangeMm/1000.0 + albega[rangeInfo.antennaMode][1]);
+                uwb_range_info_msg.distance = rangeInfo.precisionRangeMm/1000.0 + rangeOffset[rqstAnt][hostedP4xxIdx] + rangeOffset[rspdAnt][nodeIndex];
                 uwb_range_info_msg.distance_err = rangeInfo.precisionRangeErrEst/1000.0;
                 uwb_range_info_msg.distance_dot = rangeInfo.filteredRangeVel/1000.0;
                 uwb_range_info_msg.distance_dot_err = rangeInfo.filteredRangeVel/1000.0;
-                uwb_range_info_msg.antenna = rangeInfo.antennaMode + (hostedP4xxIdx-1)*2 + 1;
+                uwb_range_info_msg.antenna = rangeInfo.antennaMode;
                 uwb_range_info_msg.stopwatch_time = rangeInfo.stopwatchTime;
                 uwb_range_info_msg.uwb_time = rangeInfo.timestamp;
                 uwb_range_info_msg.responder_location.x = nodesPos[nodeIndex*3];
