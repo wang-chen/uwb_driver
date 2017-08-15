@@ -4,7 +4,7 @@
 #include "hostInterfaceCommon.h"
 
 // Maximum size of user data
-#define RN_USER_DATA_LENGTH			(128)
+#define RN_USER_DATA_LENGTH			(40)
 
 // Maximum number of excluded range targets
 #define RN_MAX_EXCLUDED_TARGETS		(256)

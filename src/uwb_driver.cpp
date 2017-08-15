@@ -965,7 +965,7 @@ int main(int argc, char *argv[])
         printf("TDMA Current config: Max rqst data %d, Max rspd data %d\n",
                     rnTDMAConfig.maxRequestDataSize, rnTDMAConfig.maxResponseDataSize);
 
-        rnTDMAConfig.maxRequestDataSize = 100;
+        rnTDMAConfig.maxRequestDataSize = 40;
         rnTDMAConfig.maxResponseDataSize = 0;
 
         // Retrieve TDMA config
