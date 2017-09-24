@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf(KRED "Calibration not specified. Initialize with zeros!\n" RESET);
+        printf(KRED "rangeOffsetA not specified. Initialize with zeros!\n" RESET);
 
         for(int i = 0; i < nodesTotal; i++)
             rangeOffsetA.push_back(0);
@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        printf(KRED "Calibration not specified. Initialize with zeros!\n" RESET);
+        printf(KRED "rangeOffsetA not specified. Initialize with zeros!\n" RESET);
 
         for(int i = 0; i < nodesTotal; i++)
             rangeOffsetB.push_back(0);
