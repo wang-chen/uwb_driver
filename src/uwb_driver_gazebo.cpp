@@ -7,6 +7,8 @@
 #include <string.h>
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_eigen.h>
+#include <random>
+
 using namespace Eigen;
 // using namespace std;
 using namespace tf;
